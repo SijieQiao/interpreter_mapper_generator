@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Vault Generator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e8e8e8;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 28px;
+        }
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            color: #fff;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: #a0aec0;
+            margin-bottom: 24px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .section {
+            margin-bottom: 24px;
+            padding: 18px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .section-title {
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: "🤖";
+            margin-right: 8px;
+        }
+        .form-group { margin-bottom: 14px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            color: #e2e8f0;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        input[type="file"]:hover {
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.3);
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            color: #e2e8f0;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .prompt-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .prompt-controls select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        .template-card {
+            margin-top: 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .template-card-title {
+            font-size: 0.95em;
+            font-weight: 600;
+            color: #bfdbfe;
+            margin-bottom: 6px;
+        }
+        .template-card-line {
+            font-size: 0.88em;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+        }
+        .template-card-line strong {
+            color: #e2e8f0;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #2d3748;
+        }
+        .file-info {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #a0aec0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .file-info.success { color: #68d391; }
+        .file-info.error { color: #fc8181; }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 32px;
+            color: #a0aec0;
+        }
+        .loading.show { display: block; }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .analysis-result {
+            display: none;
+            padding: 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        .analysis-result.show { display: block; }
+        .analysis-summary {
+            font-size: 0.95em;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+        .analysis-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .tag {
+            background: rgba(102, 126, 234, 0.2);
+            color: #90cdf4;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .tag.active {
+            background: rgba(102, 126, 234, 0.4);
+            color: #ffffff;
+        }
+        .output-section { display: none; margin-top: 24px; }
+        .output-section.show { display: block; }
+        .output-summary {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1em;
+        }
+        .output-summary .label {
+            color: #90cdf4;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .diagram-layout {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .diagram-column {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .diagram-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 600px;
+            overflow-x: auto;
+        }
+        .diagram-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .diagram-svg {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            min-width: 1000px;
+        }
+        .diagram-legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            font-size: 14px;
+            color: #666;
+        }
+        .relationship-hint {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+            color: #4a5568;
+        }
+        .diagram-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .download-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .download-btn.secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72,187,120,0.3);
+        }
+        .download-btn.secondary:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+        .dictionary-content {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow: auto;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        /* 可展开面板（解释器/映射器结果） */
+        .accordion-block { margin-top: 18px; }
+        .accordion-header {
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            background: rgba(102, 126, 234, 0.12);
+            color: #e2e8f0;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 650;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .accordion-header:hover { background: rgba(102, 126, 234, 0.18); }
+        .accordion-content { display: none; margin-top: 12px; }
+        .accordion-content.show { display: block; }
+        .accordion-subtitle {
+            color: #a0aec0;
+            font-size: 12px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* 内部卡片/表格（用于“逐表/逐映射展开”） */
+        .table-card {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .table-header {
+            padding: 12px 16px;
+            background: rgba(102, 126, 234, 0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .table-header:hover { background: rgba(102, 126, 234, 0.28); }
+        .table-body { padding: 14px 18px; font-size: 0.9em; }
+        .table-body table { width: 100%; border-collapse: collapse; }
+        .table-body th, .table-body td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            vertical-align: top;
+        }
+        .table-body th { color: #a0aec0; font-weight: 500; }
+        .table-body .comment { color: #a0aec0; font-style: italic; margin-bottom: 10px; }
+        .toggle-more { color: #a0aec0; font-weight: 500; font-size: 12px; }
+        
+        .error-area {
+            color: #fc8181;
+            background: rgba(252, 129, 129, 0.1);
+            border: 1px solid rgba(252, 129, 129, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            display: none;
+        }
+        .error-area.show { display: block; }
+        .success-message {
+            color: #68d391;
+            background: rgba(104, 211, 145, 0.1);
+            border: 1px solid rgba(104, 211, 145, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            display: none;
+        }
+        .success-message.show { display: block; }
+        .progress-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        .thinking-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-style: italic;
+        }
+        .thinking-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+        .thinking-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: thinking-bounce 1.4s ease-in-out infinite both;
+        }
+        .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes thinking-bounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Data Vault Generator <span class="ai-badge">DeepSeek Powered</span></h1>
+        <p class="subtitle">AI-driven generation of Data Vault 2.0 models aligned with banking BIAN standards</p>
+
+        <!-- Progress indicator -->
+        <div class="progress-indicator">
+            <div class="progress-step active" id="step1">1</div>
+            <span>Upload</span>
+            <div class="progress-step" id="step2">2</div>
+            <span>AI Analysis</span>
+            <div class="progress-step" id="step3">3</div>
+            <span>Generate</span>
+            <div class="progress-step" id="step4">4</div>
+            <span>Done</span>
+        </div>
+
+        <!-- Step 1: Upload file -->
+        <div class="section">
+            <div class="section-title">📁 Upload legacy data</div>
+            <div class="form-group">
+                <label for="dataFile">Select banking data dictionary file (.csv / .xlsx / .xls)</label>
+                <input type="file" id="dataFile" accept=".csv,.xlsx,.xls">
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+        </div>
+
+        <!-- Step 2: AI requirement analysis -->
+        <div class="section">
+            <div class="section-title">🧠 AI requirement analysis</div>
+            <div class="form-group">
+                <label for="userRequirement">Describe your requirements (e.g. text similar to @source.csv)</label>
+                <textarea id="userRequirement" placeholder="e.g.:
+Convert this banking Party data model to Data Vault 2.0 format.
+Focus on customer risk management and compliance audit.
+Generate a full model with Party basics, roles, contacts.
+Support historical tracking and point-in-time query."></textarea>
+            </div>
+            <div class="prompt-controls">
+                <div class="form-group">
+                    <label for="templateSelect">Prompt template</label>
+                    <select id="templateSelect">
+                        <option value="standard">Standard Modeling (default)</option>
+                        <option value="compliance">Compliance & Audit</option>
+                        <option value="relationship">Relationship Analysis</option>
+                        <option value="prototype">Rapid Prototype</option>
+                        <option value="governance">Fine-Grained Governance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="granularitySelect">Granularity (highest priority)</label>
+                    <select id="granularitySelect">
+                        <option value="balanced">Balanced</option>
+                        <option value="coarse">Coarse</option>
+                        <option value="fine">Fine</option>
+                    </select>
+                </div>
+            </div>
+            <div class="template-card" id="templateCard">
+                <div class="template-card-title" id="templateCardTitle">Template Overview</div>
+                <div class="template-card-line"><strong>Goal:</strong> <span id="templateGoal">-</span></div>
+                <div class="template-card-line"><strong>Constraints:</strong> <span id="templateConstraints">-</span></div>
+                <div class="template-card-line"><strong>Recommended Granularity:</strong> <span id="templateRecommendedGranularity">-</span></div>
+            </div>
+            <button type="button" class="btn btn-primary" id="analyzeBtn">
+                🧠 Analyze with AI
+            </button>
+
+            <!-- Analysis result -->
+            <div class="analysis-result" id="analysisResult">
+                <div class="analysis-summary" id="analysisSummary"></div>
+                <div class="analysis-tags" id="analysisTags"></div>
+            </div>
+        </div>
+
+        <!-- Step 3: Generate model -->
+        <div class="section">
+            <div class="section-title">⚡ Generate Data Vault model</div>
+            <button type="button" class="btn btn-secondary" id="generateBtn" disabled>
+                🚀 Generate full model
+            </button>
+        </div>
+
+        <!-- Loading state -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loadingText">AI is analyzing your requirements...</p>
+        </div>
+
+        <!-- Output results -->
+        <div class="output-section" id="outputSection">
+            <div class="output-summary" id="outputSummary"></div>
+
+            <div class="diagram-layout">
+                <div class="diagram-column">
+                    <!-- Raw Vault diagram -->
+                    <div class="diagram-container">
+                        <div class="diagram-title">🎯 Raw Vault 2.0 (Party – BIAN aligned)</div>
+                        <div id="rawVaultDiagram"></div>
+                    </div>
+
+                    <!-- Business Vault diagram -->
+                    <div class="diagram-container">
+                        <div class="diagram-title">🎯 Business Vault 2.0 (Party – BIAN aligned)</div>
+                        <div id="businessVaultDiagram"></div>
+                    </div>
+
+                    <!-- Diagram controls -->
+                    <div class="diagram-controls">
+                        <button class="download-btn" id="downloadRawDiagramBtn">📥 Download Raw Vault diagram</button>
+                        <button class="download-btn" id="downloadBusinessDiagramBtn">📥 Download Business Vault diagram</button>
+                        <button class="download-btn secondary" id="downloadDictionaryBtn">📚 Download data dictionary</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Data dictionary hidden area -->
+            <div class="dictionary-content" id="dictionaryContent" style="display:none;"></div>
+
+            <!-- 解释器结果（可展开） -->
+            <div class="accordion-block" id="interpreterAccordion">
+                <div class="accordion-header" id="interpreterPanelHeader">
+                    <span>📋 Legacy Interpreter Results (click to expand each table)</span>
+                    <span class="toggle-more">Click to expand</span>
+                </div>
+                <div class="accordion-content" id="interpreterPanelContent">
+                    <div class="accordion-subtitle" id="interpreterPanelSubtitle">—</div>
+                    <div id="interpreterTables"></div>
+                </div>
+            </div>
+
+            <!-- BIAN 映射结果（可展开） -->
+            <div class="accordion-block" id="bianAccordion">
+                <div class="accordion-header" id="bianPanelHeader">
+                    <span>📋 BIAN Party Mapping Results (click to expand each mapping)</span>
+                    <span class="toggle-more">Click to expand</span>
+                </div>
+                <div class="accordion-content" id="bianPanelContent">
+                    <div class="accordion-subtitle" id="bianPanelSubtitle">—</div>
+                    <div id="bianMappings"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message area -->
+        <div class="error-area" id="errorArea"></div>
+        <div class="success-message" id="successArea"></div>
+    </div>
+
+    <script>
+        (function() {
+            // 主要元素
+            const dataFile = document.getElementById('dataFile');
+            const fileInfo = document.getElementById('fileInfo');
+            const userRequirement = document.getElementById('userRequirement');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            const outputSection = document.getElementById('outputSection');
+            const outputSummary = document.getElementById('outputSummary');
+            const analysisResult = document.getElementById('analysisResult');
+            const analysisSummary = document.getElementById('analysisSummary');
+            const analysisTags = document.getElementById('analysisTags');
+            const templateSelect = document.getElementById('templateSelect');
+            const granularitySelect = document.getElementById('granularitySelect');
+            const templateCardTitle = document.getElementById('templateCardTitle');
+            const templateGoal = document.getElementById('templateGoal');
+            const templateConstraints = document.getElementById('templateConstraints');
+            const templateRecommendedGranularity = document.getElementById('templateRecommendedGranularity');
+            let latestLineageUrl = null;
+            const errorArea = document.getElementById('errorArea');
+            const successArea = document.getElementById('successArea');
+
+            // 结果元素
+            const rawVaultDiagram = document.getElementById('rawVaultDiagram');
+            const businessVaultDiagram = document.getElementById('businessVaultDiagram');
+            const dictionaryContent = document.getElementById('dictionaryContent');
+            const downloadRawDiagramBtn = document.getElementById('downloadRawDiagramBtn');
+            const downloadBusinessDiagramBtn = document.getElementById('downloadBusinessDiagramBtn');
+            const downloadDictionaryBtn = document.getElementById('downloadDictionaryBtn');
+
+            // 解释器/映射器可展开面板
+            const interpreterPanelContent = document.getElementById('interpreterPanelContent');
+            const interpreterPanelSubtitle = document.getElementById('interpreterPanelSubtitle');
+            const interpreterTables = document.getElementById('interpreterTables');
+            const interpreterPanelHeader = document.getElementById('interpreterPanelHeader');
+
+            const bianPanelContent = document.getElementById('bianPanelContent');
+            const bianPanelSubtitle = document.getElementById('bianPanelSubtitle');
+            const bianMappings = document.getElementById('bianMappings');
+            const bianPanelHeader = document.getElementById('bianPanelHeader');
+
+            // 全局变量
+            let lastUploadPath = null;
+            let currentResults = null;
+
+            const templateCatalog = {
+                standard: {
+                    title: 'Standard Modeling (default)',
+                    goal: 'Generate a balanced Data Vault model with stable structure and readability.',
+                    constraints: 'Preserve Data Vault 2.0 conventions and avoid over-segmentation.',
+                    recommendedGranularity: 'Balanced'
+                },
+                compliance: {
+                    title: 'Compliance & Audit',
+                    goal: 'Emphasize auditability, risk fields, and regulatory traceability.',
+                    constraints: 'Prioritize compliance-related attributes and history-friendly grouping.',
+                    recommendedGranularity: 'Fine'
+                },
+                relationship: {
+                    title: 'Relationship Analysis',
+                    goal: 'Maximize relationship clarity across Hub-Link-Satellite structures.',
+                    constraints: 'Prefer explicit links and complete relational connectivity.',
+                    recommendedGranularity: 'Balanced'
+                },
+                prototype: {
+                    title: 'Rapid Prototype',
+                    goal: 'Produce a concise model quickly for demo or MVP purposes.',
+                    constraints: 'Reduce satellite fragmentation and simplify model scope.',
+                    recommendedGranularity: 'Coarse'
+                },
+                governance: {
+                    title: 'Fine-Grained Governance',
+                    goal: 'Increase semantic precision for governance and stewardship workflows.',
+                    constraints: 'Retain richer attribute grouping and separation of concerns.',
+                    recommendedGranularity: 'Fine'
+                }
+            };
+
+            function renderTemplateCard() {
+                const selected = templateCatalog[templateSelect.value] || templateCatalog.standard;
+                templateCardTitle.textContent = selected.title;
+                templateGoal.textContent = selected.goal;
+                templateConstraints.textContent = selected.constraints;
+                templateRecommendedGranularity.textContent = selected.recommendedGranularity;
+            }
+
+            // SVG内容恢复函数
+            function restoreSvgContent() {
+                if (currentResults?.diagrams) {
+                    // 恢复Raw Vault图表
+                    if (currentResults.diagrams.raw_vault && rawVaultDiagram.innerHTML.length === 0) {
+                        rawVaultDiagram.innerHTML = currentResults.diagrams.raw_vault;
+                        rawVaultDiagram._originalContent = currentResults.diagrams.raw_vault;
+                        rawVaultDiagram._diagramType = 'Raw Vault 2.0';
+                        console.log('Restored Raw Vault SVG from cache');
+                    }
+
+                    // 恢复Business Vault图表
+                    if (currentResults.diagrams.business_vault && businessVaultDiagram.innerHTML.length === 0) {
+                        businessVaultDiagram.innerHTML = currentResults.diagrams.business_vault;
+                        businessVaultDiagram._originalContent = currentResults.diagrams.business_vault;
+                        businessVaultDiagram._diagramType = 'Business Vault 2.0';
+                        console.log('Restored Business Vault SVG from cache');
+                    }
+                }
+            }
+
+            function setupAccordion(headerEl, contentEl) {
+                if (!headerEl || !contentEl) return;
+                headerEl.addEventListener('click', function() {
+                    const isShowing = contentEl.classList.contains('show');
+                    contentEl.classList.toggle('show');
+                    const toggleText = headerEl.querySelector('.toggle-more');
+                    if (toggleText) toggleText.textContent = isShowing ? 'Click to expand' : 'Click to collapse';
+                });
+            }
+
+            setupAccordion(interpreterPanelHeader, interpreterPanelContent);
+            setupAccordion(bianPanelHeader, bianPanelContent);
+
+            function renderInterpreterTables(tables) {
+                if (!interpreterTables) return;
+                interpreterTables.innerHTML = '';
+
+                if (!tables || !Array.isArray(tables) || tables.length === 0) {
+                    if (interpreterPanelSubtitle) interpreterPanelSubtitle.textContent = 'No interpreter table structure found';
+                    interpreterTables.innerHTML = '<div style="color:#a0aec0;">No data</div>';
+                    return;
+                }
+
+                const totalColumns = tables.reduce((acc, t) => {
+                    if (!t || !Array.isArray(t.columns)) return acc;
+                    return acc + t.columns.length;
+                }, 0);
+
+                if (interpreterPanelSubtitle) {
+                    interpreterPanelSubtitle.textContent = `Total: ${tables.length} tables, ${totalColumns} columns`;
+                }
+
+                let expandedBody = null;
+                tables.forEach(function(t, i) {
+                    const card = document.createElement('div');
+                    card.className = 'table-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'table-header';
+                    header.innerHTML = '<span>' + escapeHtml(t.name || ('Table ' + (i + 1))) + '</span><span>' +
+                        (((t.columns && Array.isArray(t.columns)) ? t.columns.length : 0)) + ' Columns</span>';
+
+                    const body = document.createElement('div');
+                    body.className = 'table-body';
+                    body.style.display = 'none';
+
+                    let html = '';
+                    if (t.comment) html += '<div class="comment">' + escapeHtml(t.comment) + '</div>';
+
+                    html += '<table><thead><tr>' +
+                        '<th>Field</th><th>Data Type</th><th>Primary Key</th><th>Foreign Key</th><th>Reference</th><th>Comment</th>' +
+                        '</tr></thead><tbody>';
+
+                    (t.columns || []).forEach(function(c) {
+                        const isPK = !!c.is_primary_key;
+                        const isFK = !!c.is_foreign_key;
+                        const refT = c.referenced_table || '';
+                        const refC = c.referenced_column || '';
+                        html += '<tr>' +
+                            '<td>' + escapeHtml(c.name || '') + '</td>' +
+                            '<td>' + escapeHtml(String(c.data_type || '')) + '</td>' +
+                            '<td>' + (isPK ? 'Yes' : '') + '</td>' +
+                            '<td>' + (isFK ? 'Yes' : '') + '</td>' +
+                            '<td>' + (isFK ? (escapeHtml(refT) + '.' + escapeHtml(refC)) : '') + '</td>' +
+                            '<td>' + escapeHtml(c.comment || '') + '</td>' +
+                            '</tr>';
+                    });
+
+                    html += '</tbody></table>';
+                    body.innerHTML = html;
+
+                    header.addEventListener('click', function() {
+                        const isCurrentExpanded = body.style.display === 'block';
+                        if (expandedBody && expandedBody !== body) expandedBody.style.display = 'none';
+                        body.style.display = isCurrentExpanded ? 'none' : 'block';
+                        expandedBody = body.style.display === 'block' ? body : null;
+                    });
+
+                    card.appendChild(header);
+                    card.appendChild(body);
+                    interpreterTables.appendChild(card);
+                });
+            }
+
+            function renderBianMappings(bianMapping) {
+                if (!bianMappings) return;
+                bianMappings.innerHTML = '';
+
+                if (!bianMapping || !Array.isArray(bianMapping.table_mappings) || bianMapping.table_mappings.length === 0) {
+                    if (bianPanelSubtitle) bianPanelSubtitle.textContent = 'No BIAN mapping results';
+                    bianMappings.innerHTML = '<div style="color:#a0aec0;">No data</div>';
+                    return;
+                }
+
+                const unmappedTables = bianMapping.unmapped_tables || [];
+                if (bianPanelSubtitle) {
+                    bianPanelSubtitle.textContent = `Mapped ${bianMapping.table_mappings.length} tables, Unmapped ${unmappedTables.length} tables`;
+                }
+
+                let expandedBody = null;
+                bianMapping.table_mappings.forEach(function(tm, idx) {
+                    const card = document.createElement('div');
+                    card.className = 'table-card';
+
+                    const header = document.createElement('div');
+                    header.className = 'table-header';
+                    const legacy = tm.legacy_table || ('Table ' + (idx + 1));
+                    const bianEntity = tm.bian_entity || '-';
+                    const colCount = (tm.columns && Array.isArray(tm.columns)) ? tm.columns.length : 0;
+                    header.innerHTML = '<span>' + escapeHtml(legacy) + ' → ' + escapeHtml(bianEntity) + '</span><span>' +
+                        colCount + ' Columns</span>';
+
+                    const body = document.createElement('div');
+                    body.className = 'table-body';
+                    body.style.display = 'none';
+
+                    let html = '';
+                    const desc = tm.description || '';
+                    const subtype = tm.subtype ? ('(' + tm.subtype + ')') : '';
+                    if (desc) html += '<div class="comment">' + escapeHtml(desc) + '</div>';
+                    if (subtype) html += '<div style="color:#a0aec0;margin-bottom:10px;">Subtype: ' + escapeHtml(subtype) + '</div>';
+
+                    html += '<table><thead><tr>' +
+                        '<th>Legacy Field</th><th>BIAN Attribute</th><th>BIAN Entity</th><th>Data Type</th><th>Enum Mapping</th>' +
+                        '</tr></thead><tbody>';
+
+                    (tm.columns || []).forEach(function(c) {
+                        html += '<tr>' +
+                            '<td>' + escapeHtml(c.legacy_column || '') + '</td>' +
+                            '<td>' + escapeHtml(c.bian_attribute || '') +
+                                (c.sub_attribute ? ' (' + escapeHtml(c.sub_attribute) + ')' : '') +
+                            '</td>' +
+                            '<td>' + escapeHtml(c.bian_entity || '') + '</td>' +
+                            '<td>' + escapeHtml(String(c.data_type || '')) + '</td>' +
+                            '<td>' + escapeHtml(c.value_mapping_ref || '') + '</td>' +
+                            '</tr>';
+                    });
+
+                    if (tm.unmapped_columns && tm.unmapped_columns.length > 0) {
+                        html += '<tr><td colspan="5" style="color:#a0aec0;">Unmapped fields: ' +
+                            escapeHtml(tm.unmapped_columns.join(', ')) + '</td></tr>';
+                    }
+
+                    html += '</tbody></table>';
+                    body.innerHTML = html;
+
+                    header.addEventListener('click', function() {
+                        const isCurrentExpanded = body.style.display === 'block';
+                        if (expandedBody && expandedBody !== body) expandedBody.style.display = 'none';
+                        body.style.display = isCurrentExpanded ? 'none' : 'block';
+                        expandedBody = body.style.display === 'block' ? body : null;
+                    });
+
+                    card.appendChild(header);
+                    card.appendChild(body);
+                    bianMappings.appendChild(card);
+                });
+            }
+
+            // 进度步骤
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+
+            function updateProgress(stepIndex) {
+                steps.forEach((stepId, index) => {
+                    const step = document.getElementById(stepId);
+                    if (step) {  // 添加空值检查
+                        step.classList.remove('active', 'completed');
+                        if (index < stepIndex) {
+                            step.classList.add('completed');
+                        } else if (index === stepIndex) {
+                            step.classList.add('active');
+                        }
+                    }
+                });
+            }
+
+            // 显示思考动画
+            function showThinking(message = "AI is thinking...") {
+                loadingText.innerHTML = `
+                    <div class="thinking-indicator">
+                        <span>${message}</span>
+                        <div class="thinking-dots">
+                            <div class="thinking-dot"></div>
+                            <div class="thinking-dot"></div>
+                            <div class="thinking-dot"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            renderTemplateCard();
+            templateSelect.addEventListener('change', renderTemplateCard);
+
+            // 文件上传
+            dataFile.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    lastUploadPath = null;
+                    fileInfo.className = 'file-info';
+                    fileInfo.textContent = '';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    fileInfo.className = 'file-info';
+                    fileInfo.innerHTML = '⏳ Uploading...';
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        lastUploadPath = result.filepath;
+                        try {
+                            localStorage.setItem('ai_datavault_last_upload', lastUploadPath);
+                        } catch (e) {}
+                        fileInfo.className = 'file-info success';
+                        fileInfo.innerHTML = '✅ Uploaded: ' + result.filename;
+                        updateProgress(1);
+                    } else {
+                        fileInfo.className = 'file-info error';
+                        fileInfo.innerHTML = '❌ Upload failed: ' + result.error;
+                    }
+                } catch (error) {
+                    fileInfo.className = 'file-info error';
+                    fileInfo.innerHTML = '❌ Upload failed: ' + error.message;
+                }
+            });
+
+            // AI需求分析
+            analyzeBtn.addEventListener('click', async function() {
+                if (!lastUploadPath) {
+                    errorArea.textContent = 'Please upload a data file first';
+                    errorArea.classList.add('show');
+                    return;
+                }
+
+                const requirement = userRequirement.value.trim();
+
+                errorArea.classList.remove('show');
+                loading.classList.add('show');
+                analyzeBtn.disabled = true;
+                showThinking("AI is analyzing your requirements...");
+
+                try {
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: lastUploadPath,
+                            requirement: requirement,
+                            template_id: templateSelect.value,
+                            granularity: granularitySelect.value
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        analysisData = result.analysis;
+                        latestLineageUrl = result.lineage_url || null;
+                        displayAnalysis(result.analysis, result.available_tables);
+                        analysisResult.classList.add('show');
+                        generateBtn.disabled = false;
+                        updateProgress(2);
+                        successArea.textContent = '✅ AI analysis complete. You can now generate the Data Vault model.';
+                        successArea.classList.add('show');
+                    } else {
+                        errorArea.textContent = 'AI analysis failed: ' + result.error;
+                        errorArea.classList.add('show');
+                    }
+                } catch (error) {
+                    errorArea.textContent = 'Request failed: ' + error.message;
+                    errorArea.classList.add('show');
+                } finally {
+                    loading.classList.remove('show');
+                    analyzeBtn.disabled = false;
+                }
+            });
+
+            // 显示AI分析结果
+            function displayAnalysis(analysis, availableTables) {
+                analysisSummary.textContent = analysis.analysis || 'AI has analyzed your requirements in depth';
+
+                analysisTags.innerHTML = '';
+
+                // 生成核心实体标签
+                const coreEntities = analysis.core_entities || {};
+                if (coreEntities.hubs && coreEntities.hubs.length > 0) {
+                    const hubsTag = document.createElement('span');
+                    hubsTag.className = 'tag active';
+                    hubsTag.textContent = `Hubs: ${coreEntities.hubs.slice(0, 3).join(', ')}${coreEntities.hubs.length > 3 ? '...' : ''}`;
+                    analysisTags.appendChild(hubsTag);
+                }
+
+                if (coreEntities.links && coreEntities.links.length > 0) {
+                    const linksTag = document.createElement('span');
+                    linksTag.className = 'tag active';
+                    linksTag.textContent = `Links: ${coreEntities.links.slice(0, 3).join(', ')}${coreEntities.links.length > 3 ? '...' : ''}`;
+                    analysisTags.appendChild(linksTag);
+                }
+
+                // 生成合规要求标签
+                const compliance = analysis.compliance_requirements || {};
+                if (compliance.risk_management) {
+                    const riskTag = document.createElement('span');
+                    riskTag.className = 'tag active';
+                    riskTag.textContent = 'Risk management';
+                    analysisTags.appendChild(riskTag);
+                }
+
+                if (compliance.regulatory_compliance) {
+                    const regTag = document.createElement('span');
+                    regTag.className = 'tag active';
+                    regTag.textContent = 'Regulatory compliance';
+                    analysisTags.appendChild(regTag);
+                }
+
+                if (compliance.audit_trail) {
+                    const auditTag = document.createElement('span');
+                    auditTag.className = 'tag active';
+                    auditTag.textContent = 'Audit trail';
+                    analysisTags.appendChild(auditTag);
+                }
+
+                // 生成图表定制标签
+                const diagram = analysis.diagram_customization || {};
+                if (diagram.show_relationship_arrows) {
+                    const arrowTag = document.createElement('span');
+                    arrowTag.className = 'tag active';
+                    arrowTag.textContent = 'Relationship arrows';
+                    analysisTags.appendChild(arrowTag);
+                }
+
+                // 显示可用表数量
+                const tablesTag = document.createElement('span');
+                tablesTag.className = 'tag';
+                tablesTag.textContent = `${availableTables.length} tables detected`;
+                analysisTags.appendChild(tablesTag);
+
+                // 显示特殊说明
+                const specialInstructions = analysis.special_instructions;
+                if (specialInstructions) {
+                    const specialTag = document.createElement('span');
+                    specialTag.className = 'tag active';
+                    specialTag.textContent = `Note: ${specialInstructions.substring(0, 30)}${specialInstructions.length > 30 ? '...' : ''}`;
+                    analysisTags.appendChild(specialTag);
+                }
+
+                if (analysis.template_id) {
+                    const templateTag = document.createElement('span');
+                    templateTag.className = 'tag active';
+                    templateTag.textContent = `Template: ${analysis.template_id}`;
+                    analysisTags.appendChild(templateTag);
+                }
+
+                if (analysis.granularity) {
+                    const granularityTag = document.createElement('span');
+                    granularityTag.className = 'tag active';
+                    granularityTag.textContent = `Granularity: ${analysis.granularity}`;
+                    analysisTags.appendChild(granularityTag);
+                }
+            }
+
+            // 生成Data Vault模型
+            generateBtn.addEventListener('click', async function() {
+                if (!lastUploadPath || !analysisData) {
+                    errorArea.textContent = 'Please complete file upload and AI analysis first';
+                    errorArea.classList.add('show');
+                    return;
+                }
+
+                errorArea.classList.remove('show');
+                successArea.classList.remove('show');
+                loading.classList.add('show');
+                generateBtn.disabled = true;
+                showThinking("AI is generating the Data Vault model...");
+
+                try {
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: lastUploadPath,
+                            analysis: analysisData
+                        })
+                    });
+
+                    const result = await response.json();
+                    console.log('Generation result:', result); // 调试信息
+
+                    if (result.success) {
+                        currentResults = result;
+                        displayResults(result);
+                        outputSection.classList.add('show');
+                        if (latestLineageUrl) {
+                            successArea.innerHTML = `🎉 Data Vault model generated successfully! <a href="${latestLineageUrl}" target="_blank" style="color:#34d399;text-decoration:underline;">Open latest lineage page</a> <span style="margin-left:8px;color:#93c5fd;">(Direct URL: /lineage)</span>`;
+                        } else {
+                            successArea.textContent = '🎉 Data Vault model generated successfully!';
+                        }
+                        successArea.classList.add('show');
+                    } else {
+                        errorArea.textContent = 'Generation failed: ' + result.error;
+                        if (result.details) {
+                            console.error('Error details:', result.details);
+                        }
+                        errorArea.classList.add('show');
+                    }
+                } catch (error) {
+                    errorArea.textContent = 'Request failed: ' + error.message;
+                    errorArea.classList.add('show');
+                } finally {
+                    loading.classList.remove('show');
+                    generateBtn.disabled = false;
+                }
+            });
+
+            // 显示生成结果
+            function displayResults(result) {
+                console.log('Displaying results:', result); // 调试信息
+
+                const summary = result.summary;
+                const granularityLabel = summary.granularity ? summary.granularity : 'balanced';
+                outputSummary.innerHTML = `
+                    <span class="label">🎉 AI generation complete</span>
+                    Processed <strong>${summary.tables_processed}</strong> tables,
+                    generated <strong>${summary.raw_entities}</strong> Raw Vault entities,
+                    <strong>${summary.business_entities}</strong> Business Vault entities
+                    · Granularity: <strong>${granularityLabel}</strong>
+                `;
+
+                // 同时显示Raw Vault和Business Vault图表
+                if (result.diagrams?.raw_vault) {
+                    rawVaultDiagram.innerHTML = result.diagrams.raw_vault;
+                    console.log('Raw Vault diagram set successfully, length:', result.diagrams.raw_vault.length);
+                    rawVaultDiagram._originalContent = result.diagrams.raw_vault;
+                    rawVaultDiagram._diagramType = 'Raw Vault 2.0';
+                } else {
+                    rawVaultDiagram.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>⚠️ Raw Vault diagram generation failed</p></div>';
+                }
+
+                if (result.diagrams?.business_vault) {
+                    businessVaultDiagram.innerHTML = result.diagrams.business_vault;
+                    console.log('Business Vault diagram set successfully, length:', result.diagrams.business_vault.length);
+                    businessVaultDiagram._originalContent = result.diagrams.business_vault;
+                    businessVaultDiagram._diagramType = 'Business Vault 2.0';
+                } else {
+                    businessVaultDiagram.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>⚠️ Business Vault diagram generation failed</p></div>';
+                }
+
+                // 设置数据字典内容
+                if (result.dictionary) {
+                    dictionaryContent.textContent = result.dictionary;
+                    console.log('Dictionary set successfully');
+                }
+
+                // 解释器/映射器结果（图表后折叠面板）
+                renderInterpreterTables(result.interpreter_tables);
+                renderBianMappings(result.bian_mapping);
+
+                updateProgress(4);
+            }
+
+
+            // 下载功能
+            downloadRawDiagramBtn.addEventListener('click', function() {
+                if (rawVaultDiagram._originalContent) {
+                    downloadSvg(rawVaultDiagram._originalContent, 'ai_raw_vault_2.0_diagram.svg');
+                }
+            });
+
+            downloadBusinessDiagramBtn.addEventListener('click', function() {
+                if (businessVaultDiagram._originalContent) {
+                    downloadSvg(businessVaultDiagram._originalContent, 'ai_business_vault_2.0_diagram.svg');
+                }
+            });
+
+            downloadDictionaryBtn.addEventListener('click', function() {
+                const content = dictionaryContent.textContent;
+                const blob = new Blob([content], { type: 'text/markdown' });
+                downloadBlob(blob, 'ai_data_dictionary.md');
+            });
+
+            // 下载辅助函数
+            function downloadSvg(svgContent, filename) {
+                const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                downloadBlob(blob, filename);
+            }
+
+            function downloadBlob(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function escapeHtml(value) {
+                if (value == null) return '';
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // 页面加载完成后尝试恢复SVG内容
+            window.addEventListener('load', function() {
+                console.log('Page loaded, checking for cached SVG content...');
+                setTimeout(restoreSvgContent, 100); // 短暂延迟确保DOM完全加载
+            });
+
+            // 监听页面可见性变化，当用户回到页面时恢复SVG内容
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    console.log('Page became visible, restoring SVG content...');
+                    setTimeout(restoreSvgContent, 100);
+                }
+            });
+
+            // 在全局作用域中暴露恢复函数，方便调试
+            window.restoreSvgContent = restoreSvgContent;
+            window.checkSvgStatus = function() {
+                console.log('Raw Vault diagram SVG length:', rawVaultDiagram?.innerHTML?.length || 0);
+                console.log('Raw Vault has cached diagram:', !!rawVaultDiagram?._originalContent);
+                console.log('Raw Vault diagram type:', rawVaultDiagram?._diagramType);
+
+                console.log('Business Vault diagram SVG length:', businessVaultDiagram?.innerHTML?.length || 0);
+                console.log('Business Vault has cached diagram:', !!businessVaultDiagram?._originalContent);
+                console.log('Business Vault diagram type:', businessVaultDiagram?._diagramType);
+            };
+        })();
+    </script>
+</body>
+</html>

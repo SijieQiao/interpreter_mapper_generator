@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Data Vault 生成器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e8e8e8;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 28px;
+        }
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            color: #fff;
+            text-align: center;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: #a0aec0;
+            margin-bottom: 24px;
+            font-size: 1.1em;
+            text-align: center;
+        }
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .section {
+            margin-bottom: 24px;
+            padding: 18px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .section-title {
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: "🤖";
+            margin-right: 8px;
+        }
+        .form-group { margin-bottom: 14px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #cbd5e1;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            color: #e2e8f0;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        input[type="file"]:hover {
+            border-color: rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.3);
+        }
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            color: #e2e8f0;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #2d3748;
+        }
+        .file-info {
+            margin-top: 8px;
+            font-size: 0.9em;
+            color: #a0aec0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .file-info.success { color: #68d391; }
+        .file-info.error { color: #fc8181; }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 32px;
+            color: #a0aec0;
+        }
+        .loading.show { display: block; }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .analysis-result {
+            display: none;
+            padding: 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        .analysis-result.show { display: block; }
+        .analysis-summary {
+            font-size: 0.95em;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+        .analysis-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .tag {
+            background: rgba(102, 126, 234, 0.2);
+            color: #90cdf4;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .tag.active {
+            background: rgba(102, 126, 234, 0.4);
+            color: #ffffff;
+        }
+        .output-section { display: none; margin-top: 24px; }
+        .output-section.show { display: block; }
+        .output-summary {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1em;
+        }
+        .output-summary .label {
+            color: #90cdf4;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        .diagram-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        .diagram-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 16px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .diagram-svg {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .diagram-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .download-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .download-btn.secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72,187,120,0.3);
+        }
+        .download-btn.secondary:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+        .dictionary-content {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow: auto;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+        .error-area {
+            color: #fc8181;
+            background: rgba(252, 129, 129, 0.1);
+            border: 1px solid rgba(252, 129, 129, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            display: none;
+        }
+        .error-area.show { display: block; }
+        .success-message {
+            color: #68d391;
+            background: rgba(104, 211, 145, 0.1);
+            border: 1px solid rgba(104, 211, 145, 0.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            display: none;
+        }
+        .success-message.show { display: block; }
+        .progress-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        .progress-step {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transition: all 0.3s;
+        }
+        .progress-step.active {
+            background: #667eea;
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+        }
+        .progress-step.completed {
+            background: #48bb78;
+        }
+        .thinking-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            font-style: italic;
+        }
+        .thinking-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+        .thinking-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: thinking-bounce 1.4s ease-in-out infinite both;
+        }
+        .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes thinking-bounce {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Data Vault 生成器 <span class="ai-badge">DeepSeek Powered</span></h1>
+        <p class="subtitle">基于AI理解您的需求，自动生成符合银行业BIAN标准的Data Vault 2.0模型</p>
+
+        <!-- 进度指示器 -->
+        <div class="progress-indicator">
+            <div class="progress-step active" id="step1">1</div>
+            <span>上传数据表</span>
+            <div class="progress-step" id="step2">2</div>
+            <span>AI需求分析</span>
+            <div class="progress-step" id="step3">3</div>
+            <span>生成模型</span>
+            <div class="progress-step" id="step4">4</div>
+            <span>完成</span>
+        </div>
+
+        <!-- 第一步：上传文件 -->
+        <div class="section">
+            <div class="section-title">📁 上传遗留数据表</div>
+            <div class="form-group">
+                <label for="dataFile">选择银行业数据字典文件（.csv / .xlsx / .xls）</label>
+                <input type="file" id="dataFile" accept=".csv,.xlsx,.xls">
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+        </div>
+
+        <!-- 第二步：AI需求分析 -->
+        <div class="section">
+            <div class="section-title">🧠 AI需求分析</div>
+            <div class="form-group">
+                <label for="userRequirement">描述您的需求（类似@source.csv的文字描述）</label>
+                <textarea id="userRequirement" placeholder="例如：
+我需要将这个银行业Party数据模型转换为Data Vault 2.0格式。
+重点关注客户风险管理和合规审计功能。
+生成包含Party基本信息、角色关系、联系方式的完整模型。
+需要支持历史数据追踪和时间点查询。"></textarea>
+            </div>
+            <button type="button" class="btn btn-primary" id="analyzeBtn">
+                🧠 AI分析需求
+            </button>
+
+            <!-- 分析结果 -->
+            <div class="analysis-result" id="analysisResult">
+                <div class="analysis-summary" id="analysisSummary"></div>
+                <div class="analysis-tags" id="analysisTags"></div>
+            </div>
+        </div>
+
+        <!-- 第三步：生成模型 -->
+        <div class="section">
+            <div class="section-title">⚡ 生成Data Vault模型</div>
+            <button type="button" class="btn btn-secondary" id="generateBtn" disabled>
+                🚀 生成完整模型
+            </button>
+        </div>
+
+        <!-- 加载状态 -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loadingText">AI正在分析您的需求...</p>
+        </div>
+
+        <!-- 输出结果 -->
+        <div class="output-section" id="outputSection">
+            <div class="output-summary" id="outputSummary"></div>
+
+            <!-- 固定图表显示区域 -->
+            <div class="diagram-container">
+                <div class="diagram-title">🎯 AI生成的Data Vault 2.0模型图表</div>
+                <div id="mainDiagram"></div>
+
+                <!-- 图表说明 -->
+                <div class="relationship-hint">
+                    <strong>图表说明：</strong>
+                    <span id="diagramDescription">正在生成详细的关系图表，包含实体间的箭头连接...</span>
+                </div>
+
+                <!-- 图表图例 -->
+                <div class="diagram-legend">
+                    <strong>图例：</strong>
+                    <span id="legendContent">
+                        🟢 Hub (业务主键实体) |
+                        🟡 Link (实体间关系) |
+                        🟣 Satellite (描述性属性) |
+                        ➡️ 实线箭头 (Hub→Link) |
+                        ⤍ 虚线箭头 (Link→Satellite)
+                    </span>
+                </div>
+
+                <div class="diagram-controls">
+                    <button class="download-btn" id="downloadDiagramBtn">📥 下载图表</button>
+                    <button class="download-btn secondary" id="downloadDictionaryBtn">📚 下载数据字典</button>
+                </div>
+
+                <!-- 数据字典隐藏区域 -->
+                <div class="dictionary-content" id="dictionaryContent" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- 消息区域 -->
+        <div class="error-area" id="errorArea"></div>
+        <div class="success-message" id="successArea"></div>
+    </div>
+
+    <script>
+        (function() {
+            // 主要元素
+            const dataFile = document.getElementById('dataFile');
+            const fileInfo = document.getElementById('fileInfo');
+            const userRequirement = document.getElementById('userRequirement');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const loadingText = document.getElementById('loadingText');
+            const outputSection = document.getElementById('outputSection');
+            const outputSummary = document.getElementById('outputSummary');
+            const analysisResult = document.getElementById('analysisResult');
+            const analysisSummary = document.getElementById('analysisSummary');
+            const analysisTags = document.getElementById('analysisTags');
+            const errorArea = document.getElementById('errorArea');
+            const successArea = document.getElementById('successArea');
+
+            // 结果元素
+            const mainDiagram = document.getElementById('mainDiagram');
+            const dictionaryContent = document.getElementById('dictionaryContent');
+            const downloadDiagramBtn = document.getElementById('downloadDiagramBtn');
+            const downloadDictionaryBtn = document.getElementById('downloadDictionaryBtn');
+
+            // 检查关键元素是否存在
+            if (!dataFile || !fileInfo || !analyzeBtn || !generateBtn) {
+                console.error('Critical DOM elements not found!');
+                return;
+            }
+
+            // 全局变量
+            let lastUploadPath = null;
+            let currentResults = null;
+
+            // SVG内容恢复函数
+            function restoreSvgContent() {
+                if (currentResults?.diagrams && mainDiagram) {
+                    // 根据之前的选择逻辑重新选择图表
+                    let selectedDiagram = null;
+                    let diagramType = 'Raw Vault';
+
+                    if (currentResults.diagrams.business_vault && currentResults.summary.business_entities > 0) {
+                        selectedDiagram = currentResults.diagrams.business_vault;
+                        diagramType = 'Business Vault 2.0';
+                    } else if (currentResults.diagrams.raw_vault) {
+                        selectedDiagram = currentResults.diagrams.raw_vault;
+                        diagramType = 'Raw Vault 2.0';
+                    }
+
+                    if (selectedDiagram && mainDiagram.innerHTML.length === 0) {
+                        mainDiagram.innerHTML = selectedDiagram;
+                        mainDiagram._originalContent = selectedDiagram;
+                        mainDiagram._diagramType = diagramType;
+                        console.log(`Restored ${diagramType} SVG from cache`);
+                    }
+                }
+            }
+
+            // 进度步骤
+            const steps = ['step1', 'step2', 'step3', 'step4'];
+
+            let uploadedFilePath = null;
+            let analysisData = null;
+
+            // 页面加载完成后尝试恢复SVG内容
+            window.addEventListener('load', function() {
+                console.log('Page loaded, checking for cached SVG content...');
+                setTimeout(restoreSvgContent, 100); // 短暂延迟确保DOM完全加载
+            });
+
+            // 监听页面可见性变化，当用户回到页面时恢复SVG内容
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    console.log('Page became visible, restoring SVG content...');
+                    setTimeout(restoreSvgContent, 100);
+                }
+            });
+
+            // 在全局作用域中暴露恢复函数，方便调试
+            window.restoreSvgContent = restoreSvgContent;
+            window.checkSvgStatus = function() {
+                console.log('Main diagram SVG length:', mainDiagram?.innerHTML?.length || 0);
+                console.log('Has cached diagram:', !!mainDiagram?._originalContent);
+                console.log('Diagram type:', mainDiagram?._diagramType);
+            };
+
+            // 更新进度
+            function updateProgress(stepIndex) {
+                steps.forEach((stepId, index) => {
+                    const step = document.getElementById(stepId);
+                    if (step) {  // 添加空值检查
+                        step.classList.remove('active', 'completed');
+                        if (index < stepIndex) {
+                            step.classList.add('completed');
+                        } else if (index === stepIndex) {
+                            step.classList.add('active');
+                        }
+                    }
+                });
+            }
+
+            // 显示思考动画
+            function showThinking(message = "AI正在思考...") {
+                loadingText.innerHTML = `
+                    <div class="thinking-indicator">
+                        <span>${message}</span>
+                        <div class="thinking-dots">
+                            <div class="thinking-dot"></div>
+                            <div class="thinking-dot"></div>
+                            <div class="thinking-dot"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 文件上传
+            dataFile.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    uploadedFilePath = null;
+                    fileInfo.className = 'file-info';
+                    fileInfo.textContent = '';
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    fileInfo.className = 'file-info';
+                    fileInfo.innerHTML = '⏳ 上传中...';
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        uploadedFilePath = result.filepath;
+                        fileInfo.className = 'file-info success';
+                        fileInfo.innerHTML = '✅ 已上传: ' + result.filename;
+                        updateProgress(1);
+                    } else {
+                        fileInfo.className = 'file-info error';
+                        fileInfo.innerHTML = '❌ 上传失败: ' + result.error;
+                    }
+                } catch (error) {
+                    fileInfo.className = 'file-info error';
+                    fileInfo.innerHTML = '❌ 上传失败: ' + error.message;
+                }
+            });
+
+            // AI需求分析
+            analyzeBtn.addEventListener('click', async function() {
+                if (!uploadedFilePath) {
+                    errorArea.textContent = '请先上传数据文件';
+                    errorArea.classList.add('show');
+                    return;
+                }
+
+                const requirement = userRequirement.value.trim();
+                if (!requirement) {
+                    errorArea.textContent = '请输入需求描述';
+                    errorArea.classList.add('show');
+                    return;
+                }
+
+                errorArea.classList.remove('show');
+                loading.classList.add('show');
+                analyzeBtn.disabled = true;
+                showThinking("AI正在分析您的需求...");
+
+                try {
+                    const response = await fetch('/api/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: uploadedFilePath,
+                            requirement: requirement
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        analysisData = result.analysis;
+                        displayAnalysis(result.analysis, result.available_tables);
+                        analysisResult.classList.add('show');
+                        generateBtn.disabled = false;
+                        updateProgress(2);
+                        successArea.textContent = '✅ AI分析完成！您可以继续生成Data Vault模型。';
+                        successArea.classList.add('show');
+                    } else {
+                        errorArea.textContent = 'AI分析失败: ' + result.error;
+                        errorArea.classList.add('show');
+                    }
+                } catch (error) {
+                    errorArea.textContent = '请求失败: ' + error.message;
+                    errorArea.classList.add('show');
+                } finally {
+                    loading.classList.remove('show');
+                    analyzeBtn.disabled = false;
+                }
+            });
+
+
+            // 生成Data Vault模型
+            generateBtn.addEventListener('click', async function() {
+                if (!uploadedFilePath || !analysisData) {
+                    errorArea.textContent = '请先完成文件上传和AI分析';
+                    errorArea.classList.add('show');
+                    return;
+                }
+
+                errorArea.classList.remove('show');
+                successArea.classList.remove('show');
+                loading.classList.add('show');
+                generateBtn.disabled = true;
+                showThinking("AI正在生成Data Vault模型...");
+
+                try {
+                    const response = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: uploadedFilePath,
+                            analysis: analysisData
+                        })
+                    });
+
+                    const result = await response.json();
+                    console.log('Generation result:', result); // 调试信息
+
+                    if (result.success) {
+                        displayResults(result);
+                        outputSection.classList.add('show');
+                        updateProgress(4);
+                        successArea.textContent = '🎉 Data Vault模型生成完成！';
+                        successArea.classList.add('show');
+                    } else {
+                        errorArea.textContent = '生成失败: ' + result.error;
+                        if (result.details) {
+                            console.error('详细错误:', result.details);
+                        }
+                        errorArea.classList.add('show');
+                    }
+                } catch (error) {
+                    errorArea.textContent = '请求失败: ' + error.message;
+                    errorArea.classList.add('show');
+                } finally {
+                    loading.classList.remove('show');
+                    generateBtn.disabled = false;
+                }
+            });
+
+            // 显示AI分析结果
+            function displayAnalysis(analysis, availableTables) {
+                analysisSummary.textContent = analysis.analysis || 'AI已分析您的需求';
+
+                analysisTags.innerHTML = '';
+
+                // 生成标签
+                const tags = [];
+
+                if (analysis.raw_vault?.generate_hubs) tags.push('Hubs');
+                if (analysis.raw_vault?.generate_links) tags.push('Links');
+                if (analysis.raw_vault?.generate_satellites) tags.push('Satellites');
+                if (analysis.business_vault?.generate_pit) tags.push('PIT Tables');
+                if (analysis.business_vault?.generate_bridge) tags.push('Bridge Tables');
+                if (analysis.business_vault?.generate_historic) tags.push('Historic Tables');
+
+                if (analysis.compliance_focus?.risk_management) tags.push('风险管理');
+                if (analysis.compliance_focus?.regulatory_reporting) tags.push('监管报告');
+                if (analysis.compliance_focus?.audit_trail) tags.push('审计追踪');
+
+                tags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.className = 'tag active';
+                    tagElement.textContent = tag;
+                    analysisTags.appendChild(tagElement);
+                });
+
+                // 显示可用表
+                const tablesTag = document.createElement('span');
+                tablesTag.className = 'tag';
+                tablesTag.textContent = `检测到 ${availableTables.length} 个表`;
+                analysisTags.appendChild(tablesTag);
+            }
+
+            // 显示生成结果
+            function displayResults(result) {
+                console.log('Displaying results:', result); // 调试信息
+
+                const summary = result.summary;
+                outputSummary.innerHTML = `
+                    <span class="label">🎉 AI生成完成</span>
+                    处理了 <strong>${summary.tables_processed}</strong> 个表，
+                    生成了 <strong>${summary.raw_entities}</strong> 个Raw Vault实体，
+                    <strong>${summary.business_entities}</strong> 个Business Vault实体
+                `;
+
+                // 根据AI分析结果智能选择显示的图表
+                let selectedDiagram = null;
+                let diagramType = 'Raw Vault';
+
+                if (result.diagrams?.business_vault && summary.business_entities > 0) {
+                    // 如果有Business Vault实体且数量大于0，优先显示Business Vault
+                    selectedDiagram = result.diagrams.business_vault;
+                    diagramType = 'Business Vault 2.0';
+                } else if (result.diagrams?.raw_vault) {
+                    // 否则显示Raw Vault
+                    selectedDiagram = result.diagrams.raw_vault;
+                    diagramType = 'Raw Vault 2.0';
+                }
+
+                // 更新图表标题
+                const titleElement = document.querySelector('.diagram-title');
+                titleElement.textContent = `🎯 AI生成的${diagramType}模型图表`;
+
+                // 更新图表描述
+                const descriptionElement = document.getElementById('diagramDescription');
+                const showArrows = analysis.diagrams?.show_relationship_arrows;
+                const detailedConnections = analysis.diagrams?.detailed_connections;
+
+                let description = `显示${summary.raw_entities + summary.business_entities}个实体`;
+                if (showArrows) {
+                    description += '，包含实体间关系箭头';
+                }
+                if (detailedConnections) {
+                    description += '，详细的关系连接';
+                }
+                if (analysis.compliance_requirements?.risk_management) {
+                    description += '，突出风险管理字段';
+                }
+
+                descriptionElement.textContent = description;
+
+                // 显示选中的图表
+                if (selectedDiagram) {
+                    mainDiagram.innerHTML = selectedDiagram;
+                    console.log(`${diagramType} diagram set successfully, length:`, selectedDiagram.length);
+                    // 存储原始内容以备恢复
+                    mainDiagram._originalContent = selectedDiagram;
+                    mainDiagram._diagramType = diagramType;
+                } else {
+                    console.error('No diagram available!');
+                    mainDiagram.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><p>⚠️ 图表生成失败</p><p style="font-size: 14px;">请检查服务器日志或重试</p></div>';
+                }
+
+                // 设置数据字典内容
+                if (result.dictionary) {
+                    dictionaryContent.textContent = result.dictionary;
+                    console.log('Dictionary set successfully');
+                }
+
+                updateProgress(4);
+            }
+
+
+            // 下载功能
+            downloadDiagramBtn.addEventListener('click', function() {
+                const diagramType = mainDiagram._diagramType || 'Data_Vault';
+                const filename = `ai_${diagramType.replace(/\s+/g, '_').toLowerCase()}_diagram.svg`;
+                downloadSvg(mainDiagram.innerHTML, filename);
+            });
+
+            downloadDictionaryBtn.addEventListener('click', function() {
+                const content = dictionaryContent.textContent;
+                const blob = new Blob([content], { type: 'text/markdown' });
+                downloadBlob(blob, 'ai_data_dictionary.md');
+            });
+
+            function downloadSvg(svgContent, filename) {
+                const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                downloadBlob(blob, filename);
+            }
+
+            function downloadBlob(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        })();
+    </script>
+</body>
+</html>

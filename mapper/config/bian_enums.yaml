@@ -1,0 +1,101 @@
+# BIAN Party 枚举值映射配置
+# 将遗留系统枚举值映射到 BIAN 标准枚举 (Party Helper Diagram)
+
+# PartyTypeValues: Person | Organisation
+party_type:
+  Individual: "Person"
+  individual: "Person"
+  Person: "Person"
+  person: "Person"
+  Organization: "Organisation"
+  organisation: "Organisation"
+  Organisation: "Organisation"
+  Org: "Organisation"
+  Company: "Organisation"
+  "自然人": "Person"
+  "法人": "Organisation"
+  "个人": "Person"
+  "企业": "Organisation"
+
+# PartyIdentificationTypeValues
+national_id_type:
+  "身份证": "IdentityCardNumber"
+  "护照": "PassportNumber"
+  "驾照": "DriverLicenseNumber"
+  "税号": "TaxIdentificationNumber"
+  "营业执照": "CorporateIdentification"
+  "统一社会信用代码": "RegistrationAuthorityIdentification"
+  "LEI": "LEI (Legal Entity Identifier)"
+  "National ID": "NationalRegistrationNumber"
+  "Passport": "PassportNumber"
+  "Driver License": "DriverLicenseNumber"
+  "Tax ID": "TaxIdentificationNumber"
+  "SSN": "SocialSecurityNumber"
+  "Alien Registration": "AlienRegistrationNumber"
+
+# PartyLocationTypeValues
+address_type:
+  Residential: "Location is Residential Address of Party"
+  residential: "Location is Residential Address of Party"
+  "居住地址": "Location is Residential Address of Party"
+  Mailing: "Location is Delivery Point Address of Party"
+  "邮寄地址": "Location is Delivery Point Address of Party"
+  Business: "Location is Work Address of Party"
+  "工作地址": "Location is Work Address of Party"
+  Work: "Location is Work Address of Party"
+  Domicile: "Location is Domicile Address of Party"
+  "户籍地址": "Location is Domicile Address of Party"
+  "出生地": "Location is Place of Birth of Party"
+  "Place of Birth": "Location is Place of Birth of Party"
+
+# Party_PartyRelationshipTypeValues
+relationship_type:
+  Parent: "Party is parent of Party"
+  parent: "Party is parent of Party"
+  Subsidiary: "Party is subsidiary of Party"
+  subsidiary: "Party is subsidiary of Party"
+  Spouse: "Party is married to Party"
+  spouse: "Party is married to Party"
+  Partner: "Party acts on behalf of Party"
+  partner: "Party acts on behalf of Party"
+  "父子": "Party is parent of Party"
+  "母子": "Party is parent of Party"
+  "配偶": "Party is married to Party"
+  "合作伙伴": "Party acts on behalf of Party"
+  "子公司": "Party is subsidiary of Party"
+  "母公司": "Party is parent of Party"
+  "授权代表": "Party is the Power of Attorney for Party"
+  "联系人": "Party is Contact Point for Party"
+  "认证方": "Party is certified by Party"
+
+# Party Role 简化映射（BIAN 中 Party Role 为泛化概念）
+role_type:
+  Borrower: "Borrower"
+  Guarantor: "Guarantor"
+  AccountHolder: "Account Holder"
+  "借款人": "Borrower"
+  "担保人": "Guarantor"
+  "账户持有人": "Account Holder"
+  "主联系人": "Primary Contact"
+  "授权人": "Authorized Person"
+
+# Contact Type (Contact Point)
+contact_type:
+  Phone: "Phone"
+  Email: "Email"
+  Fax: "Fax"
+  Mobile: "Mobile"
+  "电话": "Phone"
+  "手机": "Mobile"
+  "邮箱": "Email"
+  "传真": "Fax"
+
+# PartyLegalStructureTypeValues (企业法人结构)
+legal_structure_type:
+  "有限责任公司": "Private Limited Company"
+  "股份有限公司": "Public Limited Company"
+  "个体工商户": "Sole (sole trader)"
+  "合伙企业": "Limited Partnership"
+  "独资": "Sole (sole trader)"
+  "LLC": "Limited Liability Partnership"
+  "PLC": "Public Limited Company"

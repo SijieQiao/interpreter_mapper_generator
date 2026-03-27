@@ -1,0 +1,36 @@
+========================================
+老旧模型解释器 Web 应用 - 使用说明
+========================================
+
+这是一个独立的包，包含解释器和网页功能，可直接复制到任何项目使用。
+
+📦 包含的文件：
+1. legacy_model_reader_standalone.py  - 解释器核心
+2. web_app.py                        - Flask Web 应用
+3. run.py                            - 启动脚本
+4. requirements.txt                  - Python 依赖
+5. templates/interpreters.html       - HTML 页面
+6. README.md                         - 详细说明
+
+🚀 快速开始（3步）：
+
+1. 安装依赖：
+   pip install -r requirements.txt
+
+2. 运行应用：
+   python run.py
+   或
+   python web_app.py
+
+3. 访问网页：
+   打开浏览器访问 http://localhost:5000
+
+✨ 功能：
+- 文件上传（CSV / Excel）
+- 自动解析老旧模型数据字典
+- 查看表结构、字段详情、主外键信息
+- 查看原始 JSON 数据
+
+📝 详细说明请查看 README.md
+
+========================================

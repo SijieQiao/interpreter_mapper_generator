@@ -1,0 +1,3 @@
+table_name,column_name,data_type,is_pk,is_fk,comment
+test_table,test_id,VARCHAR,TRUE,FALSE,涓婚敭ID
+test_table,test_name,VARCHAR,FALSE,FALSE,娴嬭瘯鍚嶇О

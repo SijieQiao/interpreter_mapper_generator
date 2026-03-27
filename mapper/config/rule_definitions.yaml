@@ -1,0 +1,77 @@
+# 映射规则定义
+# 用于条件性映射、数据校验和转换
+
+rules:
+  # 主键/唯一标识符规则
+  primary_identifier:
+    type: "transform"
+    description: "标记为主标识符，用于实体引用"
+    action: "mark_as_primary"
+    condition: null
+
+  # 仅当 Party 类型为 Person 时应用
+  person_only:
+    type: "condition"
+    description: "仅对个人类型主体应用"
+    condition:
+      depends_on: "party.party_type"
+      operator: "in"
+      values: ["Person", "Individual", "个人", "自然人"]
+
+  # 仅当 Party 类型为 Organisation 时应用
+  organisation_only:
+    type: "condition"
+    description: "仅对组织类型主体应用"
+    condition:
+      depends_on: "party.party_type"
+      operator: "in"
+      values: ["Organisation", "Organization", "法人", "企业", "Company"]
+
+  # 日期字段总是映射（根据 BIAN Party Date Time 标准）
+  date_field_always_map:
+    type: "condition"
+    description: "日期字段总是映射到 Party Date Time"
+    condition: null  # 总是返回 true
+
+  # 确定 Party 子类型 (Person vs Organisation)
+  determine_subtype:
+    type: "transform"
+    description: "根据 party_type 确定 BIAN 实体子类型"
+    action: "resolve_subtype"
+    value_mapping_ref: "party_type"
+
+  # 地址相关字段（可能来自 party 或 party_address）
+  address_related:
+    type: "condition"
+    description: "地址类字段，映射到 Location Involvement"
+    condition: null
+
+  # 表名匹配规则：支持模糊匹配
+  table_alias:
+    type: "alias"
+    description: "表名别名，支持多种命名约定"
+    aliases:
+      party: ["party", "parties", "customer", "客户", "主体"]
+      party_role: ["party_role", "party_roles", "角色", "主体角色"]
+      party_contact: ["party_contact", "party_contacts", "联系方式", "联系信息"]
+      party_address: ["party_address", "party_addresses", "地址", "主体地址"]
+      party_relationship: ["party_relationship", "party_relationships", "关系", "主体关系"]
+
+  # 字段名模糊匹配模式
+  column_patterns:
+    - pattern: ".*_id$"
+      bian_suffix: "Reference"
+      description: "ID 后缀字段映射为 Reference"
+    - pattern: ".*_type$"
+      bian_suffix: "Type"
+      description: "Type 后缀映射"
+    - pattern: ".*_date$"
+      data_type_override: "DateTime"
+      description: "日期字段类型"
+
+  # 默认映射：未在 column_mapping 中定义的字段
+  default_mapping:
+    type: "fallback"
+    description: "未匹配字段的默认处理"
+    action: "map_by_comment_or_skip"
+    include_unmapped: true  # 在输出中保留未映射字段列表

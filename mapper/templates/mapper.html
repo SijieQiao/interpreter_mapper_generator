@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIAN Party 映射器</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #16213e 0%, #0f3460 50%, #1a1a2e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e8e8e8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            padding: 28px;
+        }
+        h1 { font-size: 1.6em; margin-bottom: 6px; color: #fff; }
+        .subtitle { color: #a0aec0; margin-bottom: 24px; font-size: 0.95em; }
+        .section {
+            margin-bottom: 24px;
+            padding: 18px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .section-title { font-size: 1.1em; margin-bottom: 12px; color: #e2e8f0; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; margin-bottom: 6px; color: #cbd5e1; font-size: 0.9em; }
+        input[type="file"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.25);
+            color: #e2e8f0;
+            font-size: 14px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(72,187,120,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .file-info { margin-top: 8px; font-size: 0.9em; color: #a0aec0; }
+        .loading { display: none; text-align: center; padding: 24px; color: #a0aec0; }
+        .loading.show { display: block; }
+        .spinner {
+            width: 36px; height: 36px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: #48bb78;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .output-section { display: none; margin-top: 24px; }
+        .output-section.show { display: block; }
+        .output-summary {
+            padding: 14px 18px;
+            background: rgba(72,187,120,0.15);
+            border: 1px solid rgba(72,187,120,0.3);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.95em;
+        }
+        .output-summary .label { color: #68d391; font-weight: 600; }
+        .bian-section { margin-bottom: 20px; }
+        .bian-section .section-title { color: #68d391; }
+        .bian-summary {
+            padding: 14px 18px;
+            background: rgba(72,187,120,0.15);
+            border: 1px solid rgba(72,187,120,0.3);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.95em;
+        }
+        .bian-summary .label { color: #68d391; font-weight: 600; }
+        .tables-list { display: flex; flex-direction: column; gap: 12px; }
+        .table-card {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 12px 16px;
+            background: rgba(72,187,120,0.2);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        .table-header:hover { background: rgba(72,187,120,0.28); }
+        .table-body { padding: 14px 18px; font-size: 0.9em; }
+        .table-body table { width: 100%; border-collapse: collapse; }
+        .table-body th, .table-body td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .table-body th { color: #a0aec0; font-weight: 500; }
+        .table-body .comment { color: #a0aec0; font-style: italic; margin-bottom: 10px; }
+        .raw-json {
+            margin-top: 20px;
+            padding: 14px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow: auto;
+        }
+        .err { color: #fc8181; margin-top: 12px; }
+        .toggle-raw { margin-top: 12px; font-size: 0.9em; color: #48bb78; cursor: pointer; }
+        .toggle-raw:hover { text-decoration: underline; }
+        .config-info {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #cbd5e1;
+        }
+        .config-info strong { color: #68d391; }
+
+        /* 标签页样式 */
+        .result-tab-btn {
+            background: rgba(0,0,0,0.2);
+            color: #cbd5e1;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s;
+        }
+        .result-tab-btn.active {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+        .result-content { display: none; }
+        .result-content.active { display: block; }
+
+        .result-tabs { display: flex; margin: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .result-tab-btn { margin-right: 10px; }
+
+        /* 图表和字典样式 */
+        .diagram-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        #svgDiagram { background: white; border-radius: 8px; padding: 20px; margin: 20px 0; max-width: 100%; overflow: auto; }
+        #dictionaryContent {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow: auto;
+            color: #e2e8f0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Data Vault 2.0 转换器 - 银行业 BIAN 标准</h1>
+        <p class="subtitle">上传数据字典，自动转换为符合 BIAN 标准的 Data Vault 2.0 模型（基于 <a href="https://bian.org/servicelandscape-12-0-0/views/view_53836.html" target="_blank" style="color: #48bb78;">Party Helper Diagram</a>）</p>
+
+        <div class="section">
+            <div class="section-title">上传数据字典</div>
+            <div class="form-group">
+                <label for="mapperFile">遗留模型文件（.csv / .xlsx / .xls）</label>
+                <input type="file" id="mapperFile" accept=".csv,.xlsx,.xls">
+                <div class="file-info" id="mapperFileInfo"></div>
+            </div>
+            <button type="button" class="btn" id="runBtn">运行完整转换</button>
+            <div class="config-info" id="configInfo" style="display:none;"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>解析并映射中…</p>
+        </div>
+
+        <div class="output-section" id="outputSection">
+            <div class="output-summary" id="outputSummary"></div>
+
+            <!-- 结果标签页 -->
+            <div class="result-tabs">
+                <button class="result-tab-btn active" data-result-tab="bian">BIAN 映射</button>
+                <button class="result-tab-btn" data-result-tab="raw-vault">Raw Vault</button>
+                <button class="result-tab-btn" data-result-tab="business-vault">Business Vault</button>
+                <button class="result-tab-btn" data-result-tab="diagrams">图表</button>
+                <button class="result-tab-btn" data-result-tab="dictionary">数据字典</button>
+            </div>
+
+            <!-- BIAN 映射结果 -->
+            <div id="bianTab" class="result-content active">
+                <div id="bianMappingSection" class="bian-section">
+                    <div class="section-title">📋 BIAN Party 映射结果</div>
+                    <div id="bianSummary" class="bian-summary"></div>
+                    <div id="bianTablesList" class="tables-list"></div>
+                </div>
+            </div>
+
+            <!-- Raw Vault 结果 -->
+            <div id="rawVaultTab" class="result-content">
+                <div class="section">
+                    <div class="section-title">🏗️ Raw Data Vault</div>
+                    <div id="rawVaultSummary" class="bian-summary"></div>
+                    <div id="rawVaultEntities" class="tables-list"></div>
+                </div>
+            </div>
+
+            <!-- Business Vault 结果 -->
+            <div id="businessVaultTab" class="result-content">
+                <div class="section">
+                    <div class="section-title">🏢 Business Data Vault</div>
+                    <div id="businessVaultSummary" class="bian-summary"></div>
+                    <div id="businessVaultEntities" class="tables-list"></div>
+                </div>
+            </div>
+
+            <!-- 图表结果 -->
+            <div id="diagramsTab" class="result-content">
+                <div class="section">
+                    <div class="section-title">📊 Data Vault 图表</div>
+                    <div class="diagram-controls">
+                        <button class="btn" id="generateRawDiagramBtn">生成 Raw Vault 图表</button>
+                        <button class="btn" id="generateBusinessDiagramBtn">生成 Business Vault 图表</button>
+                    </div>
+                    <div id="diagramContainer" style="display:none;">
+                        <div id="diagramTitle"></div>
+                        <div id="svgDiagram"></div>
+                        <button class="btn" id="downloadSvgBtn">下载 SVG</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据字典结果 -->
+            <div id="dictionaryTab" class="result-content">
+                <div class="section">
+                    <div class="section-title">📚 数据字典</div>
+                    <button class="btn" id="generateDictionaryBtn">生成数据字典</button>
+                    <div id="dictionaryContainer" style="display:none;">
+                        <button class="btn" id="downloadDictionaryBtn">下载数据字典</button>
+                        <pre id="dictionaryContent"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toggle-raw" id="toggleRaw">显示 / 隐藏原始 JSON</div>
+            <pre class="raw-json" id="rawJson" style="display:none;"></pre>
+        </div>
+        <div id="errorArea" class="err" style="display:none;"></div>
+    </div>
+
+    <script>
+        (function() {
+            // 主要元素
+            const fileInput = document.getElementById('mapperFile');
+            const fileInfo = document.getElementById('mapperFileInfo');
+            const runBtn = document.getElementById('runBtn');
+            const configInfo = document.getElementById('configInfo');
+            const loading = document.getElementById('loading');
+            const outputSection = document.getElementById('outputSection');
+            const outputSummary = document.getElementById('outputSummary');
+            const errorArea = document.getElementById('errorArea');
+
+            // BIAN 相关元素
+            const bianSummary = document.getElementById('bianSummary');
+            const bianTablesList = document.getElementById('bianTablesList');
+
+            // Data Vault 相关元素
+            const rawVaultSummary = document.getElementById('rawVaultSummary');
+            const rawVaultEntities = document.getElementById('rawVaultEntities');
+            const businessVaultSummary = document.getElementById('businessVaultSummary');
+            const businessVaultEntities = document.getElementById('businessVaultEntities');
+
+            // 图表相关元素
+            const generateRawDiagramBtn = document.getElementById('generateRawDiagramBtn');
+            const generateBusinessDiagramBtn = document.getElementById('generateBusinessDiagramBtn');
+            const diagramContainer = document.getElementById('diagramContainer');
+            const diagramTitle = document.getElementById('diagramTitle');
+            const svgDiagram = document.getElementById('svgDiagram');
+            const downloadSvgBtn = document.getElementById('downloadSvgBtn');
+
+            // 数据字典相关元素
+            const generateDictionaryBtn = document.getElementById('generateDictionaryBtn');
+            const dictionaryContainer = document.getElementById('dictionaryContainer');
+            const dictionaryContent = document.getElementById('dictionaryContent');
+            const downloadDictionaryBtn = document.getElementById('downloadDictionaryBtn');
+
+            // 其他元素
+            const toggleRaw = document.getElementById('toggleRaw');
+            const rawJson = document.getElementById('rawJson');
+
+            let lastUploadPath = null;
+            let currentResults = null;
+
+            // 加载配置信息
+            async function loadConfig() {
+                try {
+                    const r = await fetch('/api/mapper/config');
+                    const j = await r.json();
+                    if (j.success) {
+                        const c = j.config;
+                        configInfo.innerHTML = '<strong>映射配置：</strong>' +
+                            c.tables_configured.length + ' 个表映射，' +
+                            c.columns_configured + ' 个字段映射，' +
+                            c.enum_mappings.length + ' 个枚举映射，' +
+                            c.bian_entities.length + ' 个 BIAN 实体';
+                        configInfo.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.log('无法加载配置信息:', err);
+                }
+            }
+
+            // 页面加载时显示配置信息
+            loadConfig();
+
+            // 结果标签页切换
+            document.querySelectorAll('.result-tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-result-tab');
+                    document.querySelectorAll('.result-tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.result-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabId + 'Tab').classList.add('active');
+                });
+            });
+
+            // 单个文件上传
+            fileInput.addEventListener('change', async function(e) {
+                const f = e.target.files[0];
+                if (!f) { lastUploadPath = null; fileInfo.textContent = ''; return; }
+                const fd = new FormData();
+                fd.append('file', f);
+                try {
+                    const r = await fetch('/api/upload', { method: 'POST', body: fd });
+                    const j = await r.json();
+                    if (j.success) {
+                        lastUploadPath = j.filepath;
+                        fileInfo.textContent = '✓ 已上传: ' + j.filename;
+                    } else {
+                        lastUploadPath = null;
+                        fileInfo.textContent = '上传失败: ' + (j.error || '未知错误');
+                    }
+                } catch (err) {
+                    lastUploadPath = null;
+                    fileInfo.textContent = '上传失败: ' + err.message;
+                }
+            });
+
+
+            // 单个文件处理
+            runBtn.addEventListener('click', async function() {
+                if (!lastUploadPath) {
+                    errorArea.textContent = '请先选择并上传文件';
+                    errorArea.style.display = 'block';
+                    outputSection.classList.remove('show');
+                    return;
+                }
+                errorArea.style.display = 'none';
+                outputSection.classList.remove('show');
+                loading.classList.add('show');
+                runBtn.disabled = true;
+                try {
+                    const r = await fetch('/api/datavault/transform', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: lastUploadPath
+                        })
+                    });
+
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                    }
+
+                    const j = await r.json();
+                    console.log('API Response:', j); // 调试信息
+
+                    if (j.success) {
+                        currentResults = j;
+                        displayResults(j);
+                        outputSection.classList.add('show');
+                    } else {
+                        errorArea.textContent = '转换失败: ' + (j.error || '未知错误');
+                        errorArea.style.display = 'block';
+                    }
+                } catch (err) {
+                    console.error('Request failed:', err);
+                    errorArea.textContent = '请求失败: ' + err.message;
+                    errorArea.style.display = 'block';
+                } finally {
+                    loading.classList.remove('show');
+                    runBtn.disabled = false;
+                }
+            });
+
+
+            // 显示完整结果
+            function displayResults(results) {
+                console.log('Processing results:', results); // 调试信息
+
+                if (!results) {
+                    console.error('Results is null or undefined');
+                    errorArea.textContent = '结果数据无效';
+                    errorArea.style.display = 'block';
+                    return;
+                }
+
+                const bm = results.bian_summary || {};
+                const dv = results.data_vault || {};
+
+                if (!bm) {
+                    console.warn('BIAN summary is missing');
+                }
+                if (!dv) {
+                    console.warn('Data Vault data is missing');
+                }
+
+                // 总览
+                outputSummary.innerHTML = '<span class="label">Data Vault 2.0 转换完成</span> — 数据源: <strong>' + escapeHtml(results.filepath ? results.filepath.split('/').pop() : '未知') + '</strong>';
+
+                // BIAN 映射结果
+                const bmSummary = bm.summary || {};
+                bianSummary.innerHTML = 'BIAN Party 领域 — 已映射 <strong>' + (bmSummary.mapped_tables || 0) + '</strong> 张表，<strong>' + (bmSummary.total_columns_mapped || 0) + '</strong> 个字段';
+                displayBianMappings(bm);
+
+                // Raw Vault 结果
+                rawVaultSummary.innerHTML = 'Raw Vault — <strong>' + (dv.raw_vault_entities || 0) + '</strong> 个实体，<strong>' + (dv.total_relationships || 0) + '</strong> 个关系';
+                displayVaultEntities(dv.raw_entities || [], rawVaultEntities);
+
+                // Business Vault 结果
+                businessVaultSummary.innerHTML = 'Business Vault — <strong>' + (dv.business_vault_entities || 0) + '</strong> 个实体，<strong>' + (dv.total_relationships || 0) + '</strong> 个关系';
+                displayVaultEntities(dv.business_entities || [], businessVaultEntities);
+
+                // 原始 JSON
+                rawJson.textContent = JSON.stringify(results, null, 2);
+                rawJson.style.display = 'none';
+            }
+
+            // 显示 BIAN 映射
+            function displayBianMappings(bm) {
+                bianTablesList.innerHTML = '';
+
+                if (!bm || !bm.table_mappings) {
+                    bianTablesList.innerHTML = '<div style="color:#a0aec0;">暂无映射结果</div>';
+                    return;
+                }
+
+                let expandedBody = null;
+
+                (bm.table_mappings || []).forEach(function(tm) {
+                    const card = document.createElement('div');
+                    card.className = 'table-card';
+                    const header = document.createElement('div');
+                    header.className = 'table-header';
+                    header.innerHTML = '<span>' + escapeHtml(tm.legacy_table) + ' → ' + escapeHtml(tm.bian_entity) + '</span><span>' + (tm.columns ? tm.columns.length : 0) + ' 字段</span>';
+                    const body = document.createElement('div');
+                    body.className = 'table-body';
+                    body.style.display = 'none';
+                    let html = '';
+                    if (tm.description) html += '<div class="comment">' + escapeHtml(tm.description) + '</div>';
+                    html += '<table><thead><tr><th>遗留字段</th><th>BIAN 属性</th><th>BIAN 实体</th><th>数据类型</th><th>枚举映射</th></tr></thead><tbody>';
+                    (tm.columns || []).forEach(function(c) {
+                        html += '<tr><td>' + escapeHtml(c.legacy_column) + '</td><td>' + escapeHtml(c.bian_attribute || '') + (c.sub_attribute ? ' (' + escapeHtml(c.sub_attribute) + ')' : '') + '</td><td>' + escapeHtml(c.bian_entity || '') + '</td><td>' + escapeHtml(c.data_type || '') + '</td><td>' + escapeHtml(c.value_mapping_ref || '') + '</td></tr>';
+                    });
+                    if (tm.unmapped_columns && tm.unmapped_columns.length) {
+                        html += '<tr><td colspan="5" style="color:#a0aec0;">未映射字段: ' + tm.unmapped_columns.join(', ') + '</td></tr>';
+                    }
+                    html += '</tbody></table>';
+                    body.innerHTML = html;
+
+                    header.addEventListener('click', function() {
+                        const isCurrentExpanded = body.style.display === 'block';
+
+                        if (expandedBody && expandedBody !== body) {
+                            expandedBody.style.display = 'none';
+                        }
+
+                        if (isCurrentExpanded) {
+                            body.style.display = 'none';
+                            expandedBody = null;
+                        } else {
+                            body.style.display = 'block';
+                            expandedBody = body;
+                        }
+                    });
+
+                    card.appendChild(header);
+                    card.appendChild(body);
+                    bianTablesList.appendChild(card);
+                });
+            }
+
+            // 显示 Vault 实体
+            function displayVaultEntities(entities, container) {
+                container.innerHTML = '';
+
+                if (!entities || !Array.isArray(entities) || entities.length === 0) {
+                    container.innerHTML = '<div style="color:#a0aec0;">暂无实体数据</div>';
+                    return;
+                }
+
+                let expandedBody = null;
+
+                entities.forEach(function(entity) {
+                    const card = document.createElement('div');
+                    card.className = 'table-card';
+                    const header = document.createElement('div');
+                    header.className = 'table-header';
+                    header.innerHTML = '<span>' + escapeHtml(entity.name) + ' (' + escapeHtml(entity.type) + ')</span><span>' + entity.columns.length + ' 字段</span>';
+                    const body = document.createElement('div');
+                    body.className = 'table-body';
+                    body.style.display = 'none';
+                    let html = '<div class="comment">' + escapeHtml(entity.description) + '</div>';
+                    html += '<table><thead><tr><th>字段名</th><th>数据类型</th><th>键类型</th><th>可空</th><th>描述</th></tr></thead><tbody>';
+                    entity.columns.forEach(function(col) {
+                        const keyType = col.column_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        const nullable = col.nullable ? 'Yes' : 'No';
+                        html += '<tr><td>' + escapeHtml(col.name) + '</td><td>' + escapeHtml(col.data_type) + '</td><td>' + keyType + '</td><td>' + nullable + '</td><td>' + escapeHtml(col.description || '') + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                    body.innerHTML = html;
+
+                    header.addEventListener('click', function() {
+                        const isCurrentExpanded = body.style.display === 'block';
+
+                        if (expandedBody && expandedBody !== body) {
+                            expandedBody.style.display = 'none';
+                        }
+
+                        if (isCurrentExpanded) {
+                            body.style.display = 'none';
+                            expandedBody = null;
+                        } else {
+                            body.style.display = 'block';
+                            expandedBody = body;
+                        }
+                    });
+
+                    card.appendChild(header);
+                    card.appendChild(body);
+                    container.appendChild(card);
+                });
+            }
+
+
+            // 生成 Raw Vault 图表
+            generateRawDiagramBtn.addEventListener('click', async function() {
+                if (!currentResults) return;
+                await generateDiagram('raw');
+            });
+
+            // 生成 Business Vault 图表
+            generateBusinessDiagramBtn.addEventListener('click', async function() {
+                if (!currentResults) return;
+                await generateDiagram('business');
+            });
+
+            // 生成图表
+            async function generateDiagram(vaultType) {
+                try {
+                    const r = await fetch('/api/datavault/diagram/' + vaultType, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: currentResults.filepath
+                        })
+                    });
+                    const j = await r.json();
+                    if (j.success) {
+                        diagramTitle.textContent = vaultType === 'raw' ? 'Raw Data Vault 2.0 图表' : 'Business Data Vault 2.0 图表';
+                        svgDiagram.innerHTML = j.svg_content;
+                        diagramContainer.style.display = 'block';
+                        // 切换到图表标签页
+                        document.querySelector('[data-result-tab="diagrams"]').click();
+                    } else {
+                        alert('生成图表失败: ' + j.error);
+                    }
+                } catch (err) {
+                    alert('请求失败: ' + err.message);
+                }
+            }
+
+            // 下载 SVG
+            downloadSvgBtn.addEventListener('click', function() {
+                const svgContent = svgDiagram.innerHTML;
+                const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = diagramTitle.textContent + '.svg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            // 生成数据字典
+            generateDictionaryBtn.addEventListener('click', async function() {
+                if (!currentResults) return;
+                try {
+                    const r = await fetch('/api/datavault/dictionary', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filepath: currentResults.filepath
+                        })
+                    });
+                    const j = await r.json();
+                    if (j.success) {
+                        dictionaryContent.textContent = j.dictionary_content;
+                        dictionaryContainer.style.display = 'block';
+                        // 切换到数据字典标签页
+                        document.querySelector('[data-result-tab="dictionary"]').click();
+                    } else {
+                        alert('生成数据字典失败: ' + j.error);
+                    }
+                } catch (err) {
+                    alert('请求失败: ' + err.message);
+                }
+            });
+
+            // 下载数据字典
+            downloadDictionaryBtn.addEventListener('click', function() {
+                const content = dictionaryContent.textContent;
+                const blob = new Blob([content], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'data_dictionary.md';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            toggleRaw.addEventListener('click', function() {
+                rawJson.style.display = rawJson.style.display === 'none' ? 'block' : 'none';
+            });
+
+            function escapeHtml(s) {
+                if (s == null) return '';
+                return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
+        })();
+    </script>
+</body>
+</html>

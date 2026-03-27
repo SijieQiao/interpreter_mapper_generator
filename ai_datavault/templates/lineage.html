@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Lineage Center</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%);
+            color: #e5e7eb;
+            min-height: 100vh;
+            padding: 18px;
+        }
+        .container { max-width: 1500px; margin: 0 auto; }
+        .header {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .title { font-size: 1.5em; font-weight: 700; margin-bottom: 6px; }
+        .subtitle { color: #94a3b8; font-size: 0.95em; }
+
+        .toolbar {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 10px;
+            align-items: end;
+        }
+        .field label { display:block; font-size: .86em; color: #cbd5e1; margin-bottom: 4px; }
+        .field input, .field select {
+            width: 100%; padding: 9px 10px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(0,0,0,.25); color: #e5e7eb;
+        }
+        .btn {
+            padding: 10px 14px; border-radius: 8px; border: none; cursor: pointer;
+            background: linear-gradient(135deg,#22c55e,#16a34a); color: #fff; font-weight: 600;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0,1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .metric {
+            padding: 12px; border-radius: 10px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .metric .k { font-size: .82em; color:#93c5fd; margin-bottom: 4px; }
+        .metric .v { font-size: 1.25em; font-weight: 700; }
+
+        .main {
+            display:grid;
+            grid-template-columns: minmax(0, 2fr) minmax(340px,1fr);
+            gap: 12px;
+        }
+        .panel {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .panel-title { font-size: 1em; margin-bottom: 10px; color:#bfdbfe; }
+
+        .filters { display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+        .chip {
+            border: 1px solid rgba(255,255,255,.18); padding: 5px 10px; border-radius: 999px;
+            font-size: .82em; cursor: pointer; color:#cbd5e1;
+        }
+        .chip.active { background: rgba(59,130,246,.25); color:#fff; border-color: rgba(59,130,246,.6); }
+
+        #graph {
+            width: 100%; min-height: 620px; background: #0b1220; border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            overflow: auto;
+        }
+        .legend { margin-top: 8px; font-size: .82em; color: #94a3b8; }
+
+        .kv { margin-bottom: 10px; }
+        .kv .k { color:#93c5fd; font-size:.85em; }
+        .kv .v { margin-top:2px; font-size:.92em; }
+
+        .check-list, .table-list {
+            max-height: 180px; overflow:auto; border: 1px solid rgba(255,255,255,.08); border-radius: 8px;
+            background: rgba(0,0,0,.2); padding: 8px;
+        }
+        .item { padding:6px 8px; border-radius:6px; font-size:.88em; }
+        .item:hover { background: rgba(59,130,246,.15); }
+
+        table { width:100%; border-collapse: collapse; font-size:.84em; }
+        th, td { padding:6px 8px; border-bottom: 1px solid rgba(255,255,255,.08); text-align:left; }
+        th { color:#93c5fd; position: sticky; top:0; background: #0b1220; }
+
+        .muted { color:#94a3b8; font-size:.88em; }
+        .error { color:#fca5a5; margin-top: 8px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="title">🧬 Data Lineage Center</div>
+        <div class="subtitle">总览 + 可钻取 + 可审计。用于展示 Data Vault 实体与字段级来源血缘。</div>
+
+        <div class="toolbar">
+            <div class="field">
+                <label>文件路径（自动读取主页面最近上传；也可手工覆盖）</label>
+                <input id="filepath" placeholder="将自动填充最近上传文件路径" />
+            </div>
+            <div class="field">
+                <label>粒度</label>
+                <select id="granularity">
+                    <option value="balanced">中粒度 (balanced)</option>
+                    <option value="coarse">粗粒度 (coarse)</option>
+                    <option value="fine">细粒度 (fine)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>实体筛选</label>
+                <input id="nodeSearch" placeholder="搜索实体名" />
+            </div>
+            <div class="field">
+                <label>字段筛选</label>
+                <input id="fieldSearch" placeholder="搜索字段/来源" />
+            </div>
+        </div>
+        <div class="error" id="error"></div>
+    </div>
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="main">
+        <div class="panel">
+            <div class="panel-title">关系图谱（可点击节点查看详情）</div>
+            <div class="filters" id="typeFilters">
+                <span class="chip active" data-type="all">全部</span>
+                <span class="chip" data-type="hub">Hub</span>
+                <span class="chip" data-type="link">Link</span>
+                <span class="chip" data-type="satellite">Satellite</span>
+            </div>
+            <div id="graph"></div>
+            <div class="legend">颜色：Hub(绿) / Link(黄) / Satellite(紫)；连线方向：source → target</div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">节点详情</div>
+            <div class="kv"><div class="k">实体</div><div class="v" id="dName">-</div></div>
+            <div class="kv"><div class="k">类型</div><div class="v" id="dType">-</div></div>
+            <div class="kv"><div class="k">来源表</div><div class="v" id="dSource">-</div></div>
+            <div class="kv"><div class="k">上游</div><div class="v" id="dUp">-</div></div>
+            <div class="kv"><div class="k">下游</div><div class="v" id="dDown">-</div></div>
+
+            <div class="panel-title" style="margin-top:10px;">质量检查</div>
+            <div class="muted">孤立 Satellite（无 FK）</div>
+            <div class="check-list" id="checkSat"></div>
+            <div class="muted" style="margin-top:8px;">未挂载 Satellite 的 Hub</div>
+            <div class="check-list" id="checkHub"></div>
+            <div class="muted" style="margin-top:8px;">无 Hub 引用的 Link</div>
+            <div class="check-list" id="checkLink"></div>
+        </div>
+    </div>
+
+    <div class="panel" style="margin-top:12px;">
+        <div class="panel-title">字段级血缘明细（可审计）</div>
+        <div class="table-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Entity</th><th>Type</th><th>Column</th><th>Source Table</th><th>Source Column</th><th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="fieldBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const state = {
+        lineage: null,
+        selectedType: 'all',
+        selectedNode: null
+    };
+
+    const filepathEl = document.getElementById('filepath');
+    const granularityEl = document.getElementById('granularity');
+    const nodeSearchEl = document.getElementById('nodeSearch');
+    const fieldSearchEl = document.getElementById('fieldSearch');
+    const errorEl = document.getElementById('error');
+
+    const metricsEl = document.getElementById('metrics');
+    const graphEl = document.getElementById('graph');
+    const fieldBodyEl = document.getElementById('fieldBody');
+
+    function esc(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;')
+            .replace(/'/g,'&#39;');
+    }
+
+    function setError(msg) { errorEl.textContent = msg || ''; }
+
+    function renderMetrics(ov) {
+        const cards = [
+            ['节点总数', ov.node_count],
+            ['关系总数', ov.edge_count],
+            ['Hub', ov.hub_count],
+            ['Link', ov.link_count],
+            ['Satellite', ov.satellite_count],
+            ['完整率', ov.lineage_completeness + '%']
+        ];
+        metricsEl.innerHTML = cards.map(([k,v]) => `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+    }
+
+    function renderChecks(checks) {
+        const fill = (id, arr) => {
+            const el = document.getElementById(id);
+            el.innerHTML = (arr && arr.length)
+                ? arr.map(x => `<div class="item">${esc(x)}</div>`).join('')
+                : '<div class="item muted">无</div>';
+        };
+        fill('checkSat', checks.orphan_satellites || []);
+        fill('checkHub', checks.hub_without_sat || []);
+        fill('checkLink', checks.link_without_hub_refs || []);
+    }
+
+    function colorByType(t) {
+        if (t === 'hub') return '#22c55e';
+        if (t === 'link') return '#f59e0b';
+        if (t === 'satellite') return '#a78bfa';
+        return '#94a3b8';
+    }
+
+    function filteredNodes() {
+        if (!state.lineage) return [];
+        const q = (nodeSearchEl.value || '').trim().toLowerCase();
+        return (state.lineage.nodes || []).filter(n => {
+            if (state.selectedType !== 'all' && n.type !== state.selectedType) return false;
+            if (q && !n.id.toLowerCase().includes(q)) return false;
+            return true;
+        });
+    }
+
+    function renderGraph() {
+        if (!state.lineage) { graphEl.innerHTML = ''; return; }
+
+        const nodes = filteredNodes();
+        const nodeIds = new Set(nodes.map(n => n.id));
+        const edges = (state.lineage.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+
+        const width = 1300;
+        const rowGap = 170;
+        const colGap = 220;
+        const layers = {
+            hub: nodes.filter(n => n.type === 'hub'),
+            link: nodes.filter(n => n.type === 'link'),
+            satellite: nodes.filter(n => n.type === 'satellite')
+        };
+
+        const pos = {};
+        const placeLayer = (arr, y) => {
+            arr.forEach((n, i) => {
+                const x = 40 + (i % 5) * colGap;
+                const yy = y + Math.floor(i / 5) * rowGap;
+                pos[n.id] = {x, y: yy};
+            });
+        };
+        placeLayer(layers.hub, 40);
+        placeLayer(layers.link, 260);
+        placeLayer(layers.satellite, 500);
+
+        let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} 1000" width="100%" height="1000">`;
+        svg += `<defs><marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#94a3b8"/></marker></defs>`;
+
+        edges.forEach(e => {
+            const s = pos[e.source], t = pos[e.target];
+            if (!s || !t) return;
+            svg += `<line x1="${s.x+85}" y1="${s.y+46}" x2="${t.x+85}" y2="${t.y}" stroke="#94a3b8" stroke-width="1.2" marker-end="url(#arr)"/>`;
+        });
+
+        nodes.forEach(n => {
+            const p = pos[n.id];
+            if (!p) return;
+            const c = colorByType(n.type);
+            const selected = state.selectedNode === n.id;
+            svg += `<g data-node="${esc(n.id)}" style="cursor:pointer;">
+                <rect x="${p.x}" y="${p.y}" width="170" height="46" rx="8" fill="${selected ? '#1d4ed8' : '#111827'}" stroke="${c}" stroke-width="2"/>
+                <text x="${p.x+8}" y="${p.y+20}" fill="#e5e7eb" font-size="11">${esc(n.id)}</text>
+                <text x="${p.x+8}" y="${p.y+35}" fill="#93c5fd" font-size="10">${esc(n.type)} · cols:${n.column_count}</text>
+            </g>`;
+        });
+
+        svg += '</svg>';
+        graphEl.innerHTML = svg;
+
+        graphEl.querySelectorAll('[data-node]').forEach(el => {
+            el.addEventListener('click', () => {
+                const id = el.getAttribute('data-node');
+                state.selectedNode = id;
+                renderGraph();
+                renderDetail(id);
+            });
+        });
+    }
+
+    function renderDetail(id) {
+        if (!state.lineage) return;
+        const n = (state.lineage.nodes || []).find(x => x.id === id);
+        if (!n) return;
+        const ups = (state.lineage.edges || []).filter(e => e.source === id).map(e => e.target);
+        const downs = (state.lineage.edges || []).filter(e => e.target === id).map(e => e.source);
+
+        document.getElementById('dName').textContent = n.id;
+        document.getElementById('dType').textContent = n.type;
+        document.getElementById('dSource').textContent = (n.source_tables || []).join(', ') || '-';
+        document.getElementById('dUp').textContent = ups.join(', ') || '-';
+        document.getElementById('dDown').textContent = downs.join(', ') || '-';
+    }
+
+    function renderFieldTable() {
+        if (!state.lineage) { fieldBodyEl.innerHTML = ''; return; }
+        const q = (fieldSearchEl.value || '').trim().toLowerCase();
+        const rows = (state.lineage.field_lineage || []).filter(r => {
+            if (!q) return true;
+            return [r.entity, r.column, r.source_table, r.source_column, r.entity_type].join(' ').toLowerCase().includes(q);
+        });
+        fieldBodyEl.innerHTML = rows.map(r => `
+            <tr>
+                <td>${esc(r.entity)}</td>
+                <td>${esc(r.entity_type)}</td>
+                <td>${esc(r.column)}</td>
+                <td>${esc(r.source_table)}</td>
+                <td>${esc(r.source_column)}</td>
+                <td>${esc(r.status)}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function buildLineage() {
+        const filepath = (filepathEl.value || '').trim();
+        if (!filepath) { setError('未找到最近上传文件，请先回主页面上传一次文件'); return; }
+        setError('');
+        try {
+            const r = await fetch('/api/lineage/build', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    filepath,
+                    granularity: granularityEl.value,
+                    requirement: `${granularityEl.value} 粒度`
+                })
+            });
+            const j = await r.json();
+            if (!j.success) throw new Error(j.error || '构建失败');
+            state.lineage = j.lineage;
+            state.selectedNode = null;
+            renderMetrics(j.lineage.overview || {});
+            renderChecks(j.lineage.checks || {});
+            renderGraph();
+            renderFieldTable();
+        } catch (e) {
+            setError(e.message || String(e));
+        }
+    }
+
+    document.querySelectorAll('#typeFilters .chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('#typeFilters .chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            state.selectedType = chip.getAttribute('data-type');
+            renderGraph();
+        });
+    });
+
+    nodeSearchEl.addEventListener('input', renderGraph);
+    fieldSearchEl.addEventListener('input', renderFieldTable);
+
+    // 粒度变化时自动重建
+    granularityEl.addEventListener('change', buildLineage);
+
+    // 自动使用主页面最近上传文件并自动构建
+    try {
+        const last = localStorage.getItem('ai_datavault_last_upload');
+        if (last && !filepathEl.value) {
+            filepathEl.value = last;
+        }
+    } catch (e) {}
+
+    buildLineage();
+})();
+</script>
+</body>
+</html>

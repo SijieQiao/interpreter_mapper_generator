@@ -1,0 +1,142 @@
+table_name,attribute_name,attribute_desc,isPK,isFK,comment
+party,party_id,参与者唯一标识,YES,NO,主键，UUID
+party,party_type,参与者类型，如个人、公司,NO,NO,"枚举：Individual, Organization"
+party,legal_name,法定名称,NO,NO,个人为全名，企业为公司注册名称
+party,birth_date,出生日期（针对个人）,NO,NO,个人客户有效，企业留空
+party,registration_date,注册日期,NO,NO,个人或企业首次注册时间
+party,gender,性别,NO,NO,"'M','F','Other'，针对个人"
+party,national_id_type,国民身份证类型,NO,NO,如身份证、护照、驾照等
+party,national_id_number,国民身份证号码,NO,NO,唯一识别个人身份
+party,tax_id,税务识别号,NO,NO,个人或企业税号
+party,country_of_residence,居住国家,NO,NO,ISO国家代码
+party,nationality,国籍,NO,NO,ISO国家代码
+party,marital_status,婚姻状态,NO,NO,"如Single, Married, Divorced"
+party,employment_status,就业状态,NO,NO,"如Employed, Unemployed, Retired"
+party,profession,职业,NO,NO,工作行业或职位名称
+party,preferred_language,首选语言,NO,NO,ISO语言代码
+party,email,电子邮件,NO,NO,主邮箱地址
+party,phone_number,电话号码,NO,NO,主联系电话
+party,secondary_phone,备用电话,NO,NO,备用联系电话
+party,created_by,创建人,NO,NO,系统操作员ID
+party,created_date,创建时间,NO,NO,记录创建时间
+party,last_updated_by,最后修改人,NO,NO,系统操作员ID
+party,last_updated_date,最后修改时间,NO,NO,记录更新时间
+party,status,状态,NO,NO,"Active, Inactive, Suspended"
+party,preferred_contact_method,首选联系方式,NO,NO,"Email, Phone, Mail等"
+party,language_preference,语言偏好,NO,NO,ISO语言代码
+party,risk_rating,风险等级,NO,NO,低、中、高
+party,source_of_funds,资金来源,NO,NO,用于合规审查
+party,notes,备注,NO,NO,备注说明
+party,external_reference,外部系统引用ID,NO,NO,用于系统间数据同步
+party_role,party_role_id,参与者角色唯一标识,YES,NO,主键，UUID
+party_role,party_id,参与者ID,NO,YES,外键，关联party.party_id
+party_role,role_type,角色类型,NO,NO,"如Borrower, Guarantor, AccountHolder"
+party_role,valid_from,角色有效起始日期,NO,NO,
+party_role,valid_to,角色有效截止日期,NO,NO,
+party_role,status,角色状态,NO,NO,"Active, Inactive"
+party_role,created_by,创建人,NO,NO,
+party_role,created_date,创建时间,NO,NO,
+party_role,last_updated_by,最后修改人,NO,NO,
+party_role,last_updated_date,最后修改时间,NO,NO,
+party_role,notes,备注,NO,NO,
+party_role,authorization_level,授权级别,NO,NO,"如Primary, Secondary"
+party_role,role_description,角色描述,NO,NO,
+party_role,organization_name,组织名称（针对企业角色）,NO,NO,
+party_role,department,部门,NO,NO,
+party_role,position,职位,NO,NO,
+party_role,contact_email,角色联系邮箱,NO,NO,
+party_role,contact_phone,角色联系电话,NO,NO,
+party_role,country,国家,NO,NO,ISO国家代码
+party_role,region,地区,NO,NO,
+party_role,language_preference,语言偏好,NO,NO,
+party_role,risk_rating,风险评级,NO,NO,
+party_role,compliance_status,合规状态,NO,NO,
+party_role,last_review_date,最近审查日期,NO,NO,
+party_role,created_source,创建来源,NO,NO,系统、手工等
+party_role,external_reference,外部引用ID,NO,NO,
+party_role,preferred_contact_method,首选联系方式,NO,NO,
+party_role,is_primary,是否主要角色,NO,NO,Boolean
+party_role,notes_additional,额外备注,NO,NO,
+party_contact,contact_id,联系信息唯一标识,YES,NO,主键，UUID
+party_contact,party_id,参与者ID,NO,YES,外键，关联party.party_id
+party_contact,contact_type,联系类型,NO,NO,"Phone, Email, Fax, Mobile, Social Media等"
+party_contact,contact_value,联系信息值,NO,NO,电话号码、邮箱地址等
+party_contact,is_preferred,是否首选联系方式,NO,NO,Boolean
+party_contact,valid_from,有效起始日期,NO,NO,
+party_contact,valid_to,有效截止日期,NO,NO,
+party_contact,usage,联系用途,NO,NO,"Billing, Notification, Marketing等"
+party_contact,created_by,创建人,NO,NO,
+party_contact,created_date,创建时间,NO,NO,
+party_contact,last_updated_by,最后修改人,NO,NO,
+party_contact,last_updated_date,最后修改时间,NO,NO,
+party_contact,notes,备注,NO,NO,
+party_contact,country_code,国家区号,NO,NO,电话区号，或联系地址国家
+party_contact,extension,分机号,NO,NO,电话联系时使用
+party_contact,language_preference,语言偏好,NO,NO,
+party_contact,contact_status,联系状态,NO,NO,"Active, Inactive"
+party_contact,verification_status,验证状态,NO,NO,"Verified, Unverified"
+party_contact,preferred_contact_method,首选联系方式,NO,NO,
+party_contact,contact_priority,联系优先级,NO,NO,数字，优先级排序
+party_contact,type_detail,联系类型详细说明,NO,NO,
+party_contact,source,来源,NO,NO,系统、手工等
+party_contact,external_reference,外部引用ID,NO,NO,
+party_contact,created_source,创建来源,NO,NO,
+party_contact,last_review_date,最近审核日期,NO,NO,
+party_contact,is_active,是否有效,NO,NO,Boolean
+party_contact,notes_additional,额外备注,NO,NO,
+party_address,address_id,地址唯一标识,YES,NO,主键，UUID
+party_address,party_id,参与者ID,NO,YES,外键，关联party.party_id
+party_address,address_type,地址类型,NO,NO,"Residential, Mailing, Business等"
+party_address,address_line1,地址行1,NO,NO,主地址行
+party_address,address_line2,地址行2,NO,NO,补充地址
+party_address,city,城市,NO,NO,
+party_address,state_province,州/省份,NO,NO,
+party_address,postal_code,邮政编码,NO,NO,
+party_address,country,国家,NO,NO,ISO国家代码
+party_address,valid_from,有效起始日期,NO,NO,
+party_address,valid_to,有效截止日期,NO,NO,
+party_address,is_primary,是否主地址,NO,NO,Boolean
+party_address,delivery_instructions,配送说明,NO,NO,
+party_address,created_by,创建人,NO,NO,
+party_address,created_date,创建时间,NO,NO,
+party_address,last_updated_by,最后修改人,NO,NO,
+party_address,last_updated_date,最后修改时间,NO,NO,
+party_address,address_status,地址状态,NO,NO,"Active, Inactive"
+party_address,notes,备注,NO,NO,
+party_address,external_reference,外部引用ID,NO,NO,
+party_address,location_latitude,纬度,NO,NO,用于地理定位
+party_address,location_longitude,经度,NO,NO,用于地理定位
+party_address,time_zone,时区,NO,NO,
+party_address,address_source,地址来源,NO,NO,系统、手工等
+party_address,last_review_date,最近审核日期,NO,NO,
+party_address,is_verified,是否验证,NO,NO,Boolean
+party_address,preferred_contact_method,首选联系方式,NO,NO,
+party_address,notes_additional,额外备注,NO,NO,
+party_relationship,relationship_id,关系唯一标识,YES,NO,主键，UUID
+party_relationship,party_id_from,关系起始参与者ID,NO,YES,外键，关联party.party_id
+party_relationship,party_id_to,关系目标参与者ID,NO,YES,外键，关联party.party_id
+party_relationship,relationship_type,关系类型,NO,NO,"如Parent, Subsidiary, Spouse, Partner等"
+party_relationship,valid_from,关系生效日期,NO,NO,
+party_relationship,valid_to,关系失效日期,NO,NO,
+party_relationship,status,关系状态,NO,NO,"Active, Inactive"
+party_relationship,created_by,创建人,NO,NO,
+party_relationship,created_date,创建时间,NO,NO,
+party_relationship,last_updated_by,最后修改人,NO,NO,
+party_relationship,last_updated_date,最后修改时间,NO,NO,
+party_relationship,notes,备注,NO,NO,
+party_relationship,external_reference,外部系统引用ID,NO,NO,
+party_relationship,relationship_strength,关系强度,NO,NO,数值或枚举，表示关系紧密程度
+party_relationship,legal_agreement_reference,法律协议引用,NO,NO,关联合同或协议ID
+party_relationship,confidentiality_level,保密级别,NO,NO,"Public, Confidential, Restricted"
+party_relationship,source,来源,NO,NO,系统、手工等
+party_relationship,is_primary,是否主要关系,NO,NO,Boolean
+party_relationship,last_review_date,最近审查日期,NO,NO,
+party_relationship,relationship_notes,关系备注,NO,NO,
+party_relationship,relationship_category,关系类别,NO,NO,"Family, Business, Legal等"
+party_relationship,approval_status,审批状态,NO,NO,"Pending, Approved, Rejected"
+party_relationship,risk_rating,风险评级,NO,NO,"Low, Medium, High"
+party_relationship,communication_preference,沟通偏好,NO,NO,
+party_relationship,duration_months,关系持续时间（月）,NO,NO,
+party_relationship,frequency_of_contact,联系频率,NO,NO,"Daily, Weekly, Monthly等"
+party_relationship,is_active,是否激活,NO,NO,Boolean
+party_relationship,notes_additional,额外备注,NO,NO,

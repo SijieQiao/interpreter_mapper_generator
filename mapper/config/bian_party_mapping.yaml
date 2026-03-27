@@ -1,0 +1,633 @@
+# BIAN Party 领域映射配置
+# 参考: https://bian.org/servicelandscape-12-0-0/views/view_53836.html
+# 将遗留模型表/字段映射到 BIAN Party Helper Diagram 定义的业务实体
+
+version: "1.0"
+domain: "Party"
+
+# 表级映射：遗留表 -> BIAN 业务实体
+table_mapping:
+  party:
+    bian_entity: "Party"
+    description: "主体核心信息，对应 BIAN Party 实体"
+    subtype: null  # Person | Organisation，由 party_type 字段决定
+  party_role:
+    bian_entity: "Party Role"
+    description: "主体角色，对应 BIAN Party Role"
+    parent_entity: "Party"
+  party_contact:
+    bian_entity: "Location Involvement"
+    subtype: "Contact Point Address"
+    description: "联系点地址，对应 BIAN Location (Contact Point Address)"
+    parent_entity: "Party"
+  party_address:
+    bian_entity: "Location Involvement"
+    description: "地址位置，对应 BIAN Location Involvement"
+    parent_entity: "Party"
+  party_relationship:
+    bian_entity: "Party_Party Relationship"
+    description: "主体间关系，对应 BIAN Party_Party Relationship"
+    parent_entity: "Party"
+
+# 字段级映射：遗留字段 -> BIAN 属性
+# 格式: 表名.字段名 -> BIAN 实体.属性
+column_mapping:
+  # === Party 核心字段 ===
+  party.party_id:
+    bian_attribute: "Party Reference"
+    bian_entity: "Party"
+    data_type: "Identifier"
+    cardinality: "1"
+    rule_ref: "primary_identifier"
+  party.party_type:
+    bian_attribute: "Party Type"
+    bian_entity: "Party"
+    bian_enum: "PartyTypeValues"
+    value_mapping_ref: "party_type"
+    rule_ref: "determine_subtype"
+  party.legal_name:
+    bian_attribute: "Party Name"
+    bian_entity: "Party"
+    data_type: "Name"
+    cardinality: "1..*"
+  party.birth_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Place of Birth Date"
+    data_type: "DateTime"
+    rule_ref: "date_field_always_map"
+  party.registration_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Registration Date"
+    data_type: "DateTime"
+    rule_ref: "date_field_always_map"
+  party.gender:
+    bian_attribute: "Person Attributes"
+    bian_entity: "Person"
+    data_type: "String"
+    rule_ref: "date_field_always_map"  # 暂时允许映射，之后可以根据party_type细化
+  party.national_id_type:
+    bian_attribute: "Party Identification Type"
+    bian_entity: "Party Identification"
+    bian_enum: "PartyIdentificationTypeValues"
+    value_mapping_ref: "national_id_type"
+  party.national_id_number:
+    bian_attribute: "Party Identification"
+    bian_entity: "Party Identification"
+    data_type: "Identifier"
+    sub_attribute: "Identifier Value"
+  party.tax_id:
+    bian_attribute: "Party Identification"
+    bian_entity: "Party Identification"
+    party_identification_type: "TaxIdentificationNumber"
+    data_type: "Identifier"
+    sub_attribute: "Identifier Value"
+  party.country_of_residence:
+    bian_attribute: "Location Reference"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Domicile Address of Party"
+    rule_ref: "address_related"
+  party.nationality:
+    bian_attribute: "Location Reference"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Place of Birth of Party"
+    rule_ref: "person_only"
+  party.risk_rating:
+    bian_attribute: "Risk Level"
+    bian_entity: "Party Profile"
+    party_profile_type: "Risk Profile"
+    data_type: "String"
+  party.source_of_funds:
+    bian_attribute: "Source Of Wealth"
+    bian_entity: "Party Profile"
+    party_profile_type: "KYC Profile"
+    data_type: "String"
+  party.compliance_status:
+    bian_attribute: "Money Laundering Check"
+    bian_entity: "Party Profile"
+    party_profile_type: "KYC Profile"
+    data_type: "String"
+  party.external_reference:
+    bian_attribute: "Party Reference"
+    bian_entity: "Party"
+    data_type: "Identifier"
+    description: "外部系统引用"
+
+  # === 扩展映射：根据 BIAN Party Helper Diagram 精细映射 ===
+  party.nationality:
+    bian_attribute: "Location Reference"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Place of Birth of Party"
+    data_type: "String"
+    description: "出生地国家"
+  party.email:
+    bian_attribute: "Contact Point Value"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Contact Point Address of Party"
+    data_type: "String"
+    description: "电子邮件联系点"
+  party.phone_number:
+    bian_attribute: "Contact Point Value"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Contact Point Address of Party"
+    data_type: "String"
+    description: "电话联系点"
+  party.secondary_phone:
+    bian_attribute: "Contact Point Value"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Contact Point Address of Party"
+    data_type: "String"
+    description: "辅助电话联系点"
+
+  # === Person 相关属性（BIAN Person 实体）===
+  party.marital_status:
+    bian_attribute: "Person Attributes"
+    bian_entity: "Person"
+    data_type: "String"
+    description: "婚姻状况"
+  party.employment_status:
+    bian_attribute: "Person Attributes"
+    bian_entity: "Person"
+    data_type: "String"
+    description: "就业状况"
+  party.profession:
+    bian_attribute: "Person Attributes"
+    bian_entity: "Person"
+    data_type: "String"
+    description: "职业"
+  party.preferred_language:
+    bian_attribute: "Person Attributes"
+    bian_entity: "Person"
+    data_type: "String"
+    description: "首选语言"
+
+  # === 系统和状态字段 ===
+  party.created_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Created Date"
+    data_type: "DateTime"
+    description: "记录创建时间"
+  party.last_updated_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Last Updated Date"
+    data_type: "DateTime"
+    description: "最后更新时间"
+  party.status:
+    bian_attribute: "Party Profile"
+    bian_entity: "Party"
+    party_profile_type: "Commercial Profile"
+    data_type: "String"
+    description: "主体状态"
+  party.notes:
+    bian_attribute: "Party Notes"
+    bian_entity: "Party"
+    data_type: "String"
+    description: "主体备注信息"
+
+  # === Party Role 字段 ===
+  party_role.party_role_id:
+    bian_attribute: "Party Role Identification"
+    bian_entity: "Party Role"
+    data_type: "Identifier"
+  party_role.party_id:
+    bian_attribute: "Party Reference"
+    bian_entity: "Party Role"
+    data_type: "Identifier"
+    references: "Party"
+  party_role.role_type:
+    bian_attribute: "Party Role Type"
+    bian_entity: "Party Role"
+    value_mapping_ref: "role_type"
+  party_role.risk_rating:
+    bian_attribute: "Risk Level"
+    bian_entity: "Party Profile"
+    party_profile_type: "Risk Profile"
+  party_role.compliance_status:
+    bian_attribute: "Due Diligence Check"
+    bian_entity: "Party Profile"
+    party_profile_type: "KYC Profile"
+
+  # === Party Role 扩展字段 ===
+  party_role.valid_from:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Role Valid From"
+    data_type: "DateTime"
+    description: "角色生效时间"
+  party_role.valid_to:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Role Valid To"
+    data_type: "DateTime"
+    description: "角色失效时间"
+  party_role.status:
+    bian_attribute: "Role Status"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色状态"
+  party_role.created_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Role Created Date"
+    data_type: "DateTime"
+    description: "角色记录创建时间"
+  party_role.last_updated_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Role Last Updated"
+    data_type: "DateTime"
+    description: "角色记录最后更新时间"
+  party_role.authorization_level:
+    bian_attribute: "Authorization Level"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "授权级别"
+  party_role.role_description:
+    bian_attribute: "Role Description"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色描述"
+  party_role.organization_name:
+    bian_attribute: "Organization Name"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "组织名称"
+  party_role.department:
+    bian_attribute: "Department"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "部门"
+  party_role.position:
+    bian_attribute: "Position"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "职位"
+  party_role.contact_email:
+    bian_attribute: "Role Contact Email"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色联系邮箱"
+  party_role.contact_phone:
+    bian_attribute: "Role Contact Phone"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色联系电话"
+  party_role.country:
+    bian_attribute: "Role Country"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色所在国家"
+  party_role.region:
+    bian_attribute: "Role Region"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色所在地区"
+  party_role.is_primary:
+    bian_attribute: "Primary Role Indicator"
+    bian_entity: "Party Role"
+    data_type: "Boolean"
+    description: "是否为主角色"
+  party_role.created_source:
+    bian_attribute: "Role Source"
+    bian_entity: "Party Role"
+    data_type: "String"
+    description: "角色创建来源"
+  party_role.last_review_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Role Last Review Date"
+    data_type: "DateTime"
+    description: "角色最后审核日期"
+
+  # === Party Contact 字段 (Contact Point Address) ===
+  party_contact.contact_id:
+    bian_attribute: "Location Reference"
+    bian_entity: "Location Involvement"
+    party_location_type: "Location is Contact Point Address of Party"
+    data_type: "Identifier"
+  party_contact.party_id:
+    bian_attribute: "Party Reference"
+    bian_entity: "Location Involvement"
+    references: "Party"
+  party_contact.contact_type:
+    bian_attribute: "Contact Point Type"
+    bian_entity: "Location Involvement"
+    value_mapping_ref: "contact_type"
+  party_contact.contact_value:
+    bian_attribute: "Contact Point Value"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+
+  # === Party Contact 扩展字段 ===
+  party_contact.is_preferred:
+    bian_attribute: "Preferred Contact Indicator"
+    bian_entity: "Location Involvement"
+    data_type: "Boolean"
+    description: "是否为首选联系方式"
+  party_contact.valid_from:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Contact Valid From"
+    data_type: "DateTime"
+    description: "联系方式生效时间"
+  party_contact.valid_to:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Contact Valid To"
+    data_type: "DateTime"
+    description: "联系方式失效时间"
+  party_contact.created_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Contact Created Date"
+    data_type: "DateTime"
+    description: "联系方式记录创建时间"
+  party_contact.last_updated_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Contact Last Updated"
+    data_type: "DateTime"
+    description: "联系方式记录最后更新时间"
+  party_contact.country_code:
+    bian_attribute: "Country Code"
+    bian_entity: "Location"
+    data_type: "String"
+    description: "国家代码"
+  party_contact.extension:
+    bian_attribute: "Contact Extension"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "分机号"
+  party_contact.contact_status:
+    bian_attribute: "Contact Status"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "联系方式状态"
+  party_contact.verification_status:
+    bian_attribute: "Contact Verification Status"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "联系方式验证状态"
+  party_contact.contact_priority:
+    bian_attribute: "Contact Priority"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "联系方式优先级"
+  party_contact.is_active:
+    bian_attribute: "Contact Active Indicator"
+    bian_entity: "Location Involvement"
+    data_type: "Boolean"
+    description: "联系方式是否激活"
+  party_contact.usage:
+    bian_attribute: "Contact Usage"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "联系方式用途"
+  party_contact.type_detail:
+    bian_attribute: "Contact Type Detail"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "联系方式类型详情"
+  party_contact.created_source:
+    bian_attribute: "Contact Source"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "联系方式创建来源"
+  party_contact.last_review_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Contact Last Review Date"
+    data_type: "DateTime"
+    description: "联系方式最后审核日期"
+
+  # === Party Address 字段 (Location Involvement) ===
+  party_address.address_id:
+    bian_attribute: "Location Reference"
+    bian_entity: "Location Involvement"
+    data_type: "Identifier"
+  party_address.party_id:
+    bian_attribute: "Party Reference"
+    bian_entity: "Location Involvement"
+    references: "Party"
+  party_address.address_type:
+    bian_attribute: "Party Location Type"
+    bian_entity: "Location Involvement"
+    bian_enum: "PartyLocationTypeValues"
+    value_mapping_ref: "address_type"
+  party_address.address_line1:
+    bian_attribute: "Address Line"
+    bian_entity: "Location"
+    data_type: "String"
+  party_address.address_line2:
+    bian_attribute: "Address Line"
+    bian_entity: "Location"
+    data_type: "String"
+  party_address.city:
+    bian_attribute: "City"
+    bian_entity: "Location"
+    data_type: "String"
+  party_address.state_province:
+    bian_attribute: "State/Province"
+    bian_entity: "Location"
+    data_type: "String"
+  party_address.postal_code:
+    bian_attribute: "Postal Code"
+    bian_entity: "Location"
+    data_type: "String"
+  party_address.country:
+    bian_attribute: "Country"
+    bian_entity: "Location"
+    data_type: "String"
+
+  # === Party Address 扩展字段 ===
+  party_address.valid_from:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Address Valid From"
+    data_type: "DateTime"
+    description: "地址生效时间"
+  party_address.valid_to:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Address Valid To"
+    data_type: "DateTime"
+    description: "地址失效时间"
+  party_address.is_primary:
+    bian_attribute: "Primary Address Indicator"
+    bian_entity: "Location Involvement"
+    data_type: "Boolean"
+    description: "是否为主地址"
+  party_address.created_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Address Created Date"
+    data_type: "DateTime"
+    description: "地址记录创建时间"
+  party_address.last_updated_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Address Last Updated"
+    data_type: "DateTime"
+    description: "地址记录最后更新时间"
+  party_address.location_latitude:
+    bian_attribute: "Location Coordinates"
+    bian_entity: "Location"
+    sub_attribute: "Latitude"
+    data_type: "String"
+    description: "地理位置纬度"
+  party_address.location_longitude:
+    bian_attribute: "Location Coordinates"
+    bian_entity: "Location"
+    sub_attribute: "Longitude"
+    data_type: "String"
+    description: "地理位置经度"
+  party_address.time_zone:
+    bian_attribute: "Time Zone"
+    bian_entity: "Location"
+    data_type: "String"
+    description: "时区"
+  party_address.is_verified:
+    bian_attribute: "Address Verification Status"
+    bian_entity: "Location Involvement"
+    data_type: "Boolean"
+    description: "地址是否已验证"
+  party_address.delivery_instructions:
+    bian_attribute: "Delivery Instructions"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "送货说明"
+  party_address.address_status:
+    bian_attribute: "Address Status"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "地址状态"
+  party_address.address_source:
+    bian_attribute: "Address Source"
+    bian_entity: "Location Involvement"
+    data_type: "String"
+    description: "地址来源"
+  party_address.last_review_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Address Last Review Date"
+    data_type: "DateTime"
+    description: "地址最后审核日期"
+
+  # === Party Relationship 字段 ===
+  party_relationship.relationship_id:
+    bian_attribute: "Relationship Identification"
+    bian_entity: "Party_Party Relationship"
+    data_type: "Identifier"
+  party_relationship.party_id_from:
+    bian_attribute: "From Party"
+    bian_entity: "Party_Party Relationship"
+    references: "Party"
+  party_relationship.party_id_to:
+    bian_attribute: "To Party"
+    bian_entity: "Party_Party Relationship"
+    references: "Party"
+  party_relationship.relationship_type:
+    bian_attribute: "Relationship Type"
+    bian_entity: "Party_Party Relationship"
+    bian_enum: "Party_PartyRelationshipTypeValues"
+    value_mapping_ref: "relationship_type"
+
+  # === Party Relationship 扩展字段 ===
+  party_relationship.valid_from:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Relationship Valid From"
+    data_type: "DateTime"
+    description: "关系生效时间"
+  party_relationship.valid_to:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Relationship Valid To"
+    data_type: "DateTime"
+    description: "关系失效时间"
+  party_relationship.status:
+    bian_attribute: "Relationship Status"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "关系状态"
+  party_relationship.created_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Relationship Created Date"
+    data_type: "DateTime"
+    description: "关系记录创建时间"
+  party_relationship.last_updated_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Relationship Last Updated"
+    data_type: "DateTime"
+    description: "关系记录最后更新时间"
+  party_relationship.relationship_strength:
+    bian_attribute: "Relationship Strength"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "关系强度"
+  party_relationship.confidentiality_level:
+    bian_attribute: "Confidentiality Level"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "保密级别"
+  party_relationship.is_primary:
+    bian_attribute: "Primary Relationship Indicator"
+    bian_entity: "Party_Party Relationship"
+    data_type: "Boolean"
+    description: "是否为主关系"
+  party_relationship.relationship_category:
+    bian_attribute: "Relationship Category"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "关系类别"
+  party_relationship.approval_status:
+    bian_attribute: "Approval Status"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "审批状态"
+  party_relationship.risk_rating:
+    bian_attribute: "Relationship Risk Rating"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "关系风险评级"
+  party_relationship.duration_months:
+    bian_attribute: "Relationship Duration"
+    bian_entity: "Party_Party Relationship"
+    data_type: "Integer"
+    description: "关系持续时间（月）"
+  party_relationship.frequency_of_contact:
+    bian_attribute: "Contact Frequency"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "联系频率"
+  party_relationship.is_active:
+    bian_attribute: "Relationship Active Indicator"
+    bian_entity: "Party_Party Relationship"
+    data_type: "Boolean"
+    description: "关系是否激活"
+  party_relationship.legal_agreement_reference:
+    bian_attribute: "Legal Agreement Reference"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "法律协议引用"
+  party_relationship.source:
+    bian_attribute: "Relationship Source"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "关系来源"
+  party_relationship.last_review_date:
+    bian_attribute: "Party Date Time"
+    bian_entity: "Party"
+    sub_attribute: "Relationship Last Review Date"
+    data_type: "DateTime"
+    description: "关系最后审核日期"
+  party_relationship.communication_preference:
+    bian_attribute: "Communication Preference"
+    bian_entity: "Party_Party Relationship"
+    data_type: "String"
+    description: "沟通偏好"

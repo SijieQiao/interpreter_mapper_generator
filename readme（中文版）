@@ -1,0 +1,179 @@
+# AI Data Vault 生成器（DeepSeek + BIAN Party -> Data Vault 2.0）
+
+## 项目概述
+该项目提供一个基于 Flask 的 Web 应用：把银行业“遗留数据字典”转换为符合 Data Vault 2.0 的模型，并对齐 BIAN Party 标准。主要组成如下：
+- `LegacyModelReader`：解析遗留字典（CSV/Excel）
+- `BIANMappingLayer`：把表/字段映射到 BIAN Party
+- `DataVaultTransformer`：生成 Raw Vault（Hub/Link/Satellite）与 Business Vault（PIT/Bridge/Historic）实体与关系
+- `DeepSeekAI` + SVG 图表生成：根据你的需求生成定制 SVG 图
+- 血缘中心页面（Data Lineage Center）：展示字段级血缘快照（可钻取、可审计）
+
+Web 页面运行端口：`5003`
+
+## 前置条件
+1. Python 3.x
+2. 安装依赖（见下文）
+3. 配置 DeepSeek API Key 环境变量：
+   - `DEEPSEEK_API_KEY`
+
+## 安装依赖
+```powershell
+pip install -r requirements.txt
+```
+
+## 设置 DeepSeek API Key（Windows / PowerShell）
+```powershell
+$env:DEEPSEEK_API_KEY="your_api_key_here"
+```
+
+## 启动项目
+```powershell
+
+```
+启动后访问：
+`http://localhost:5003`
+
+## 输入文件格式说明
+允许上传格式：
+- `.csv`
+- `.xlsx`
+- `.xls`
+
+上传文件会保存到项目根目录下的 `data/input/uploads/`。
+
+解析器（`LegacyModelReader`）至少需要两列：
+- 表名列：`table_name`（也支持 `表名` / `表`）
+- 字段名列：`column_name`（也支持 `字段名` / `字段` / `column` / `列名`）
+
+可选列包括：
+- `data_type`（如 `VARCHAR`、`INT`、`DATE`、`TIMESTAMP`）
+- `length`、`precision`、`scale`
+- `is_pk`、`is_fk`
+- `ref_table`、`ref_column`（或可从字段注释中解析引用关系）
+- `comment` / `column_comment` / `table_comment`
+
+仓库内自带一个示例文件：
+`data\input\uploads\test.csv`
+
+## Web 页面使用方法
+1. 在主页面 Step 1 上传你的数据字典文件。
+2. 在 Step 2 输入你的自然语言需求描述。
+3. 选择参数：
+   - Prompt 模板（`template_id`）：`standard`、`compliance`、`relationship`、`prototype`、`governance`
+   - 粒度（最高优先级）：`balanced`、`coarse`、`fine`
+4. 点击 `Analyze with AI`（AI 分析需求）。
+5. 点击 `Generate full model`（生成完整模型），页面会渲染：
+   - Raw Vault 的 SVG 图
+   - Business Vault 的 SVG 图
+   - 数据字典（Markdown）
+6. 可通过 `Open latest lineage page` 打开血缘快照页面。
+
+## 输出内容
+生成成功后，页面会提供下载：
+- `ai_raw_vault_2.0_diagram.svg`（Raw Vault 图）
+- `ai_business_vault_2.0_diagram.svg`（Business Vault 图）
+- `ai_data_dictionary.md`（数据字典 Markdown）
+
+### 血缘快照（Lineage Snapshot）
+在 `/api/analyze` 完成后，服务端会自动写入静态血缘快照：
+- `ai_datavault/static/lineage/latest.html`
+
+访问方式：
+- `GET /lineage`（重定向到最新快照）
+
+## API 接口说明
+所有接口都在同一个 Flask 应用中（端口 `5003`）。
+
+### 1) 上传文件
+`POST /api/upload`
+请求参数：`multipart/form-data`
+- `file`：上传文件
+
+响应：
+```json
+{
+  "success": true,
+  "filename": "...",
+  "filepath": "..."
+}
+```
+
+### 2) AI 分析需求
+`POST /api/analyze`
+请求体（`application/json`）：
+```json
+{
+  "filepath": "绝对路径/你的文件.csv",
+  "requirement": "你的自然语言需求",
+  "template_id": "standard",
+  "granularity": "balanced"
+}
+```
+响应（重要字段）：
+```json
+{
+  "success": true,
+  "analysis": { "...": "..." },
+  "available_tables": ["..."],
+  "lineage_url": "/lineage"
+}
+```
+说明：
+- `template_id` 默认值为 `standard`
+- 若不传 `granularity`，将默认使用 `balanced`
+另外：在 `/api/analyze` 中，服务端会自动构建并更新“最新静态血缘快照”。
+
+### 3) 生成 Data Vault + 图表
+`POST /api/generate`
+请求体：
+```json
+{
+  "filepath": "绝对路径/你的文件.csv",
+  "analysis": { "...": "analysis JSON（来自 /api/analyze）" }
+}
+```
+响应包含：
+- `diagrams.raw_vault`（Raw Vault SVG 字符串）
+- `diagrams.business_vault`（Business Vault SVG 字符串）
+- `dictionary`（数据字典 Markdown 字符串）
+- `interpreter_tables`（解释器结果，用于页面折叠面板）
+- `bian_mapping`（BIAN 映射结果，用于页面折叠面板）
+- `summary`（统计信息 + 粒度）
+
+### 4) 构建血缘 JSON（给血缘页面使用）
+`POST /api/lineage/build`
+请求体：
+```json
+{
+  "filepath": "绝对路径/你的文件.csv",
+  "granularity": "balanced",
+  "requirement": "..."
+}
+```
+响应：
+```json
+{
+  "success": true,
+  "lineage": { "nodes": [], "edges": [], "field_lineage": [], "checks": {} }
+}
+```
+
+## Data Vault 实体命名规则（代码生成）
+数据转换器会采用确定性的命名模式，例如：
+- `hub_{entity_key}`
+- `sat_{entity_key}_{group_name}`
+- `link_{entityA}_{entityB}`
+- `pit_{hub_name_without_prefix}`
+- `bridge_{...}`
+- `hist_{satellite_name_without_prefix}`
+
+## 常见问题排查
+- 文件大小限制：`16MB`（Flask `MAX_CONTENT_LENGTH`）
+- 未设置 `DEEPSEEK_API_KEY`：服务端会直接报错退出
+- DeepSeek API 返回 `401` / `429`：检查 Key 与配额后重试
+- 解析失败：确认你的字典文件至少包含 `table_name` 与 `column_name`（或其别名）
+
+## 示例需求描述
+仓库内包含示例需求文本：
+`sample_requirements.txt`
+
