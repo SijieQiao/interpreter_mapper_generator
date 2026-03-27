@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>遗留模型解释器</title>
+    <title>Legacy Model Interpreter</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -178,43 +178,43 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔬 遗留模型解释器</h1>
-        <p class="subtitle">上传类似 sample 的遗留模型数据字典（CSV / Excel），查看解析后的表结构输出</p>
+        <h1>🔬 Legacy Model Interpreter</h1>
+        <p class="subtitle">Upload a legacy model data dictionary (CSV / Excel) and view the parsed table structures</p>
 
         <div class="layout">
             <div class="main-panel">
                 <div class="section">
-                    <div class="section-title">📁 上传数据字典</div>
+                    <div class="section-title">📁 Upload Data Dictionary</div>
                     <div class="form-group">
-                        <label for="interpreterFile">遗留模型文件（.csv / .xlsx / .xls）</label>
+                        <label for="interpreterFile">Legacy model file (.csv / .xlsx / .xls)</label>
                         <input type="file" id="interpreterFile" accept=".csv,.xlsx,.xls">
                         <div class="file-info" id="interpreterFileInfo"></div>
                     </div>
-                    <button type="button" class="btn" id="runBtn">运行解释器</button>
+                    <button type="button" class="btn" id="runBtn">Run Interpreter</button>
                 </div>
 
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
-                    <p>解析中…</p>
+                    <p>Parsing...</p>
                 </div>
 
                 <div class="output-section" id="outputSection">
                     <div class="output-summary" id="outputSummary"></div>
                     <div class="tables-list" id="tablesList"></div>
-                    <div class="toggle-raw" id="toggleRaw">显示 / 隐藏原始 JSON</div>
+                    <div class="toggle-raw" id="toggleRaw">Show / Hide Raw JSON</div>
                     <pre class="raw-json" id="rawJson" style="display:none;"></pre>
                 </div>
                 <div id="errorArea" class="err" style="display:none;"></div>
             </div>
 
             <aside class="lineage-sidebar" id="lineageSidebar">
-                <div class="lineage-title">🔗 数据血缘</div>
-                <div class="lineage-hint">解析完成后，自动展示表之间的上下游关系（基于外键）。</div>
-                <div class="lineage-stats" id="lineageStats">暂无数据</div>
+                <div class="lineage-title">🔗 Data Lineage</div>
+                <div class="lineage-hint">After parsing, upstream/downstream relationships between tables are shown automatically (based on foreign keys).</div>
+                <div class="lineage-stats" id="lineageStats">No data yet</div>
                 <div class="lineage-rel-list" id="lineageRelationList">
                     <div class="lineage-rel-item">
-                        <div class="edge">等待运行解释器…</div>
-                        <div class="meta">请先上传并解析数据字典</div>
+                        <div class="edge">Waiting to run interpreter...</div>
+                        <div class="meta">Please upload and parse a data dictionary first</div>
                     </div>
                 </div>
             </aside>
@@ -248,20 +248,20 @@
                     const j = await r.json();
                     if (j.success) {
                         lastUploadPath = j.filepath;
-                        fileInfo.textContent = '✓ 已上传: ' + j.filename;
+                        fileInfo.textContent = '✓ Uploaded: ' + j.filename;
                     } else {
                         lastUploadPath = null;
-                        fileInfo.textContent = '上传失败: ' + (j.error || '未知错误');
+                        fileInfo.textContent = 'Upload failed: ' + (j.error || 'Unknown error');
                     }
                 } catch (err) {
                     lastUploadPath = null;
-                    fileInfo.textContent = '上传失败: ' + err.message;
+                    fileInfo.textContent = 'Upload failed: ' + err.message;
                 }
             });
 
             runBtn.addEventListener('click', async function() {
                 if (!lastUploadPath) {
-                    errorArea.textContent = '请先选择并上传文件';
+                    errorArea.textContent = 'Please select and upload a file first';
                     errorArea.style.display = 'block';
                     outputSection.classList.remove('show');
                     return;
@@ -281,7 +281,7 @@
                     });
                     const j = await r.json();
                     if (j.success) {
-                        outputSummary.innerHTML = '<span class="label">' + j.label + '</span> — 共 <strong>' + j.table_count + '</strong> 张表';
+                        outputSummary.innerHTML = '<span class="label">' + j.label + '</span> — <strong>' + j.table_count + '</strong> tables';
                         tablesList.innerHTML = '';
                         let expandedCard = null;
                         let expandedBody = null;
@@ -291,15 +291,15 @@
                             card.className = 'table-card';
                             const header = document.createElement('div');
                             header.className = 'table-header';
-                            header.innerHTML = '<span>' + (t.name || '表' + (i+1)) + '</span><span>' + (t.columns ? t.columns.length : 0) + ' 列</span>';
+                            header.innerHTML = '<span>' + (t.name || 'Table ' + (i+1)) + '</span><span>' + (t.columns ? t.columns.length : 0) + ' columns</span>';
                             const body = document.createElement('div');
                             body.className = 'table-body';
                             body.style.display = 'none';
                             let html = '';
                             if (t.comment) html += '<div class="comment">' + escapeHtml(t.comment) + '</div>';
-                            html += '<table><thead><tr><th>字段</th><th>类型</th><th>主键</th><th>外键</th><th>注释</th></tr></thead><tbody>';
+                            html += '<table><thead><tr><th>Column</th><th>Type</th><th>PK</th><th>FK</th><th>Comment</th></tr></thead><tbody>';
                             (t.columns || []).forEach(function(c) {
-                                html += '<tr><td>' + escapeHtml(c.name) + '</td><td>' + escapeHtml(String(c.data_type || '')) + (c.length ? '(' + c.length + ')' : '') + '</td><td>' + (c.is_primary_key ? '是' : '') + '</td><td>' + (c.is_foreign_key ? (c.referenced_table || '是') : '') + '</td><td>' + escapeHtml(c.comment || '') + '</td></tr>';
+                                html += '<tr><td>' + escapeHtml(c.name) + '</td><td>' + escapeHtml(String(c.data_type || '')) + (c.length ? '(' + c.length + ')' : '') + '</td><td>' + (c.is_primary_key ? 'Yes' : '') + '</td><td>' + (c.is_foreign_key ? (c.referenced_table || 'Yes') : '') + '</td><td>' + escapeHtml(c.comment || '') + '</td></tr>';
                             });
                             html += '</tbody></table>';
                             body.innerHTML = html;
@@ -331,12 +331,12 @@
                         rawJson.style.display = 'none';
                         outputSection.classList.add('show');
                     } else {
-                        errorArea.textContent = j.error || '运行失败';
+                        errorArea.textContent = j.error || 'Run failed';
                         errorArea.style.display = 'block';
                         resetLineagePanel();
                     }
                 } catch (err) {
-                    errorArea.textContent = '请求失败: ' + err.message;
+                    errorArea.textContent = 'Request failed: ' + err.message;
                     errorArea.style.display = 'block';
                     resetLineagePanel();
                 } finally {
@@ -352,7 +352,7 @@
             function renderLineage(tables) {
                 const rels = [];
                 tables.forEach(function(t) {
-                    const fromTable = t && t.name ? t.name : '未知表';
+                    const fromTable = t && t.name ? t.name : 'Unknown table';
                     (t.columns || []).forEach(function(c) {
                         if (c && c.is_foreign_key && c.referenced_table) {
                             rels.push({
@@ -368,30 +368,30 @@
                 lineageRelationList.innerHTML = '';
 
                 if (!tables.length) {
-                    lineageStats.textContent = '暂无数据';
-                    lineageRelationList.innerHTML = '<div class="lineage-rel-item"><div class="edge">暂无可展示的表</div><div class="meta">请检查输入文件内容</div></div>';
+                    lineageStats.textContent = 'No data yet';
+                    lineageRelationList.innerHTML = '<div class="lineage-rel-item"><div class="edge">No tables to display</div><div class="meta">Please check the input file content</div></div>';
                     return;
                 }
 
                 if (!rels.length) {
-                    lineageStats.textContent = '表数量: ' + tables.length + '，血缘关系: 0';
-                    lineageRelationList.innerHTML = '<div class="lineage-rel-item"><div class="edge">未检测到外键关系</div><div class="meta">该数据字典中可能尚未定义外键</div></div>';
+                    lineageStats.textContent = 'Tables: ' + tables.length + ', lineage relations: 0';
+                    lineageRelationList.innerHTML = '<div class="lineage-rel-item"><div class="edge">No foreign-key relationships detected</div><div class="meta">Foreign keys may not be defined in this data dictionary</div></div>';
                     return;
                 }
 
-                lineageStats.textContent = '表数量: ' + tables.length + '，血缘关系: ' + rels.length;
+                lineageStats.textContent = 'Tables: ' + tables.length + ', lineage relations: ' + rels.length;
                 rels.forEach(function(r) {
                     const item = document.createElement('div');
                     item.className = 'lineage-rel-item';
                     item.innerHTML = '<div class="edge">' + escapeHtml(r.fromTable) + '.' + escapeHtml(r.fromColumn) + ' → ' + escapeHtml(r.toTable) + '.' + escapeHtml(r.toColumn) + '</div>'
-                                   + '<div class="meta">下游: ' + escapeHtml(r.fromTable) + ' ｜ 上游: ' + escapeHtml(r.toTable) + '</div>';
+                                   + '<div class="meta">Downstream: ' + escapeHtml(r.fromTable) + ' | Upstream: ' + escapeHtml(r.toTable) + '</div>';
                     lineageRelationList.appendChild(item);
                 });
             }
 
             function resetLineagePanel() {
-                lineageStats.textContent = '暂无数据';
-                lineageRelationList.innerHTML = '<div class="lineage-rel-item"><div class="edge">等待运行解释器…</div><div class="meta">请先上传并解析数据字典</div></div>';
+                lineageStats.textContent = 'No data yet';
+                lineageRelationList.innerHTML = '<div class="lineage-rel-item"><div class="edge">Waiting to run interpreter...</div><div class="meta">Please upload and parse a data dictionary first</div></div>';
             }
 
             function escapeHtml(s) {

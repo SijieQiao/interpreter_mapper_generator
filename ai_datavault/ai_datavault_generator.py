@@ -145,75 +145,75 @@ class DeepSeekAI:
         granularity_hint = granularity_override or "balanced"
 
         prompt = f"""
-你是一个资深的银行业数据建模架构师，专门负责将遗留系统转换为符合Data Vault 2.0标准和BIAN Party规范的模型。
+You are a senior banking data modeling architect. Your task is to convert legacy systems into a model aligned with Data Vault 2.0 and BIAN Party standards.
 
-用户提供的遗留表包括: {', '.join(available_tables)}
+Available legacy tables: {', '.join(available_tables)}
 
-【选择的分析模板】{template['name']}
-【模板目标】{template['goal']}
-【模板约束】{template['constraints']}
-【用户粒度选择（最高优先级）】{granularity_hint}
+[Selected Analysis Template] {template['name']}
+[Template Goal] {template['goal']}
+[Template Constraints] {template['constraints']}
+[User Granularity Preference - Highest Priority] {granularity_hint}
 
-用户需求: {user_input}
+User requirement: {user_input}
 
-**重要指导：基于BIAN Party领域标准，实体的正确分类规则：**
+Important guidance (BIAN Party domain classification rules):
 
-1. **HUB实体**（核心业务标识）:
-   - Party（参与者基本信息）
-   - Party_Role（参与者角色）
-   - Contact（联系方式）
-   - Address（地址信息）
-   - Relationship（关系网络）
+1. HUB entities (core business identifiers):
+   - Party
+   - Party_Role
+   - Contact
+   - Address
+   - Relationship
 
-2. **LINK实体**（实体间关系）:
-   - Party_Role（参与者与角色的关系）
-   - Party_Contact（参与者与联系方式的关系）
-   - Party_Address（参与者与地址的关系）
-   - Party_Relationship（参与者间的关系）
+2. LINK entities (inter-entity relationships):
+   - Party_Role
+   - Party_Contact
+   - Party_Address
+   - Party_Relationship
 
-3. **SATELLITE实体**（描述性属性和历史数据）:
-   - 所有实体的详细属性、历史记录、状态信息等
+3. SATELLITE entities (descriptive and historical attributes):
+   - Detailed attributes, history, status, and other descriptive fields for all entities
 
-**注意**：Party实体应该是HUB类型，而不是PIT类型。
+Important: Party must be modeled as a HUB, not a PIT.
 
-请深度分析用户需求，确定以下方面：
+Please deeply analyze the requirement and determine:
 
-1. **核心实体识别**:
-   - 识别用户最关心的核心业务实体
-   - 严格按照上述规则确定这些实体在Data Vault中的正确类型(Hub/Link/Satellite)
+1. Core entity identification:
+   - Identify the most important business entities
+   - Strictly classify them as Hub/Link/Satellite based on the rules above
 
-2. **关系映射**:
-   - 分析实体间的业务关系
-   - 确定Link的连接方式
-   - 识别Satellite的分类和属性分组
+2. Relationship mapping:
+   - Analyze business relationships among entities
+   - Determine Link connection strategy
+   - Identify Satellite grouping and attribute categorization
 
-3. **合规与业务重点**:
-   - 风险管理要求
-   - 合规审计需求
-   - 业务规则约束
+3. Compliance and business focus:
+   - Risk management requirements
+   - Compliance/audit requirements
+   - Business rule constraints
 
-4. **图表展示偏好**:
-   - 是否需要显示详细的关系箭头
-   - 是否需要特定实体的展开展示
-   - 图表布局偏好(水平/垂直/分组)
+4. Diagram presentation preferences:
+   - Whether to show detailed relationship arrows
+   - Whether specific entities require expanded display
+   - Preferred layout (hierarchical/networked/grouped)
 
-5. **输出定制**:
-   - 重点展示的字段映射关系
-   - 特定的Data Vault结构要求
-   - 合规检查的优先级
+5. Output customization:
+   - Key field mapping focus
+   - Specific Data Vault structure requirements
+   - Compliance check priority
 
-请以JSON格式返回详细分析结果，格式如下:
+Return detailed analysis in JSON using this schema:
 {{
-    "analysis": "对用户需求的深度分析总结",
+    "analysis": "Deep analysis summary in English",
     "core_entities": {{
-        "hubs": ["最重要的Hub实体列表"],
-        "links": ["关键的Link关系列表"],
-        "satellites": ["主要的Satellite分组"]
+        "hubs": ["Most important hubs"],
+        "links": ["Key links"],
+        "satellites": ["Main satellite groups"]
     }},
     "relationships": {{
-        "hub_to_link": ["Hub到Link的连接关系"],
-        "link_to_satellite": ["Link到Satellite的连接关系"],
-        "entity_connections": ["实体间的重要业务关系"]
+        "hub_to_link": ["Hub to Link relationships"],
+        "link_to_satellite": ["Link to Satellite relationships"],
+        "entity_connections": ["Important business connections"]
     }},
     "compliance_requirements": {{
         "risk_management": true/false,
@@ -224,15 +224,15 @@ class DeepSeekAI:
     "diagram_customization": {{
         "show_relationship_arrows": true/false,
         "detailed_connections": true/false,
-        "entity_expansion": ["需要详细展示的实体"],
+        "entity_expansion": ["Entities that need expanded display"],
         "layout_preference": "hierarchical/networked/grouped",
         "color_scheme": "standard/professional/accentuate_compliance"
     }},
     "field_mapping_focus": {{
-        "key_fields": ["业务键字段"],
-        "compliance_fields": ["合规相关字段"],
-        "relationship_fields": ["关系相关字段"],
-        "temporal_fields": ["时间相关字段"]
+        "key_fields": ["Business key fields"],
+        "compliance_fields": ["Compliance-related fields"],
+        "relationship_fields": ["Relationship-related fields"],
+        "temporal_fields": ["Time-related fields"]
     }},
     "output_priorities": {{
         "primary_vault_type": "raw/business",
@@ -240,10 +240,11 @@ class DeepSeekAI:
         "include_business_rules": true/false,
         "generate_compliance_checks": true/false
     }},
-    "special_instructions": "任何特殊的图表或结构要求"
+    "special_instructions": "Any special diagram or structure requirements in English"
 }}
 
-请确保返回有效的JSON格式，并根据用户需求进行深度分析。
+Critical requirement: all string values in the JSON must be in English.
+Return valid JSON only.
 """
 
         try:
@@ -256,7 +257,7 @@ class DeepSeekAI:
                 json={
                     "model": self.model,
                     "messages": [
-                        {"role": "system", "content": "你是一个专业的银行业Data Vault架构师，请详细分析用户需求并以JSON格式返回结果。"},
+                        {"role": "system", "content": "You are a professional banking Data Vault architect. Analyze user requirements deeply and return valid JSON only, with all string values in English."},
                         {"role": "user", "content": prompt}
                     ],
                     "temperature": 0.2,  # 降低随机性，提高一致性
