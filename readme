@@ -28,7 +28,7 @@ $env:DEEPSEEK_API_KEY="your_api_key_here"
 
 ## Run the Web App
 ```powershell
-python ai_datavault\launch.py
+python .\ai_datavault\ai_datavault_generator.py
 ```
 Then open:
 `http://localhost:5003`

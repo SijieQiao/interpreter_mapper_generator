@@ -28,7 +28,7 @@ $env:DEEPSEEK_API_KEY="your_api_key_here"
 
 ## 启动项目
 ```powershell
-
+python .\ai_datavault\ai_datavault_generator.py
 ```
 启动后访问：
 `http://localhost:5003`
